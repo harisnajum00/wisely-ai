@@ -19,6 +19,8 @@ You are capable of:
 - Generating creative content and ideas
 - Assisting with learning and productivity`
 
+const VISION_SYSTEM_PROMPT = SYSTEM_PROMPT + `\n\nYou also have vision capabilities. When users share images, analyze and describe them thoroughly. If they ask about a product in an image, help them identify it, provide relevant information, and suggest where they might find it online at good prices. Be specific and helpful with product recommendations.`
+
 export async function POST(request: NextRequest) {
   try {
     const { messages, files, imageBase64 } = await request.json()
@@ -33,50 +35,67 @@ export async function POST(request: NextRequest) {
       })),
     ]
 
-    // If there's an image, use VLM
+    // If there's an image, use VLM (createVision) for multimodal analysis
     if (imageBase64) {
       const lastUserMsg = formattedMessages[formattedMessages.length - 1]
+      const userText = lastUserMsg?.content || "What do you see in this image?"
+
+      // Ensure the image URL has the proper data URI prefix
+      const imageUrl = imageBase64.startsWith("data:")
+        ? imageBase64
+        : `data:image/png;base64,${imageBase64}`
+
+      // Build the vision messages array
+      // System message as a text content, then user message with image
       const vlmMessages = [
-        { role: "system" as const, content: SYSTEM_PROMPT + "\n\nYou also have vision capabilities. When users share images, analyze and describe them thoroughly." },
+        {
+          role: "system" as const,
+          content: VISION_SYSTEM_PROMPT,
+        },
         {
           role: "user" as const,
           content: [
-            { type: "text" as const, text: lastUserMsg.content || "What do you see in this image?" },
+            {
+              type: "text" as const,
+              text: userText,
+            },
             {
               type: "image_url" as const,
               image_url: {
-                url: imageBase64.startsWith("data:")
-                  ? imageBase64
-                  : `data:image/png;base64,${imageBase64}`,
+                url: imageUrl,
               },
             },
           ],
         },
       ]
 
-      const completion = await zai.chat.completions.create({
-        messages: vlmMessages as any,
-        temperature: 0.7,
-        max_tokens: 2048,
+      const completion = await zai.chat.completions.createVision({
+        model: "glm-4.6v",
+        messages: vlmMessages,
+        thinking: { type: "disabled" },
       })
 
-      const responseText = completion.choices[0]?.message?.content || "I couldn't analyze that image. Please try again."
+      const responseText =
+        completion.choices?.[0]?.message?.content ||
+        "I couldn't analyze that image. Please try again."
 
       return NextResponse.json({ message: responseText })
     }
 
-    // Regular chat completion
+    // Regular chat completion (no image)
     const completion = await zai.chat.completions.create({
       messages: formattedMessages,
       temperature: 0.7,
       max_tokens: 2048,
     })
 
-    const responseText = completion.choices[0]?.message?.content || "I'm not sure how to respond to that. Could you try rephrasing?"
+    const responseText =
+      completion.choices[0]?.message?.content ||
+      "I'm not sure how to respond to that. Could you try rephrasing?"
 
     return NextResponse.json({ message: responseText })
   } catch (error: any) {
-    console.error("Chat API error:", error)
+    console.error("Chat API error:", error?.message || error)
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }

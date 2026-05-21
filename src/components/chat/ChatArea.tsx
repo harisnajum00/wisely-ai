@@ -116,17 +116,23 @@ export default function ChatArea() {
           }),
         })
 
-        if (!res.ok) {
-          throw new Error('Failed to get response')
-        }
-
         const data = await res.json()
 
-        updateMessage(chatId, assistantMessageId, {
-          content: data.message || data.error || 'I apologize, but I could not generate a response.',
-          isLoading: false,
-        })
+        if (!res.ok) {
+          // Show the actual error from the API for better debugging
+          const errorMsg = data?.error || 'Failed to get response from Wisely.'
+          updateMessage(chatId, assistantMessageId, {
+            content: errorMsg,
+            isLoading: false,
+          })
+        } else {
+          updateMessage(chatId, assistantMessageId, {
+            content: data.message || 'I apologize, but I could not generate a response.',
+            isLoading: false,
+          })
+        }
       } catch (error) {
+        console.error('Chat error:', error)
         updateMessage(chatId, assistantMessageId, {
           content: 'Something went wrong. Please try again.',
           isLoading: false,

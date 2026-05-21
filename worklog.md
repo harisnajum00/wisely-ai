@@ -51,3 +51,26 @@ Stage Summary:
 - Pasted/dropped images show preview in input area before sending
 - Images display in user message bubbles after sending
 - Build passes clean, dev server returns 200
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix image analysis error - "Something went wrong. Please try again."
+
+Work Log:
+- Investigated the /api/chat route and found the root cause
+- The API was using zai.chat.completions.create() for image analysis, but the VLM SDK requires zai.chat.completions.createVision() for multimodal content
+- The create() method doesn't support image_url content type - it only handles text
+- Added the required `model: "glm-4.6v"` parameter to createVision call
+- Added `thinking: { type: "disabled" }` to createVision call per SDK docs
+- Added enhanced VISION_SYSTEM_PROMPT with product analysis instructions
+- Improved error handling in ChatArea: now shows actual API error messages instead of generic "Something went wrong"
+- Tested VLM endpoint directly with curl - confirmed working with both tiny test image and product questions
+- Verified text-only chat still works after changes
+
+Stage Summary:
+- Fixed: Image analysis now uses createVision() with glm-4.6v model
+- Root cause: Wrong SDK method was being called (create vs createVision)
+- VLM API verified working: responds correctly to image + question combinations
+- Error messages now more descriptive for debugging
+- Build passes clean
