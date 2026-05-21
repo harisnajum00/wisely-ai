@@ -80,17 +80,20 @@ export default function Home() {
   }
 
   const handleAbout = () => {
-    // Scroll to the bottom of the landing page (footer area)
     landingRef.current?.scrollTo({ top: landingRef.current.scrollHeight, behavior: 'smooth' })
   }
 
+  // Guest mode: go directly to chat without auth
   const handleStartChat = () => {
-    if (isAuthenticated) {
-      setCurrentView('chat')
-    } else {
-      setCurrentView('auth')
-      setAuthMode('signup')
+    if (!isAuthenticated) {
+      // Set a guest user so the chat experience works
+      setUser({
+        id: 'guest',
+        email: '',
+        name: 'Guest',
+      })
     }
+    setCurrentView('chat')
   }
 
   const handleLearnMore = () => {
@@ -98,18 +101,21 @@ export default function Home() {
   }
 
   const handlePromptClick = (prompt: string) => {
-    if (isAuthenticated) {
-      const chatId = createNewChat()
-      addMessage(chatId, {
-        id: crypto.randomUUID(),
-        role: 'user',
-        content: prompt,
-        createdAt: new Date(),
+    if (!isAuthenticated) {
+      setUser({
+        id: 'guest',
+        email: '',
+        name: 'Guest',
       })
-    } else {
-      setCurrentView('auth')
-      setAuthMode('signup')
     }
+    const chatId = createNewChat()
+    addMessage(chatId, {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: prompt,
+      createdAt: new Date(),
+    })
+    setCurrentView('chat')
   }
 
   // Chat view handlers

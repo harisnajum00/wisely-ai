@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles } from 'lucide-react'
+import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -16,7 +16,9 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebarProps) {
-  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView } = useAppStore()
+  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated } = useAppStore()
+
+  const isGuest = user?.id === 'guest'
 
   const today = new Date()
   const yesterday = new Date(today)
@@ -175,6 +177,27 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
               </button>
             </div>
             <Separator className="bg-white/5" />
+
+            {/* Guest sign-up prompt */}
+            {isGuest && (
+              <div className="p-3">
+                <div className="glass rounded-xl p-3 text-center">
+                  <p className="text-xs text-white/40 mb-2">Create an account to save your chats</p>
+                  <Button
+                    onClick={() => {
+                      setCurrentView('auth')
+                      setAuthMode('signup')
+                    }}
+                    className="w-full h-8 btn-primary rounded-lg text-white text-xs border-0 gap-1.5"
+                  >
+                    <LogIn className="size-3" />
+                    Sign Up Free
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* User profile */}
             <div className="p-3">
               <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all">
                 <Avatar className="size-8 border border-white/10">
@@ -184,7 +207,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white/80 truncate">{user?.name || 'User'}</p>
-                  <p className="text-xs text-white/30 truncate">{user?.email || ''}</p>
+                  <p className="text-xs text-white/30 truncate">{user?.email || 'Guest mode'}</p>
                 </div>
               </div>
             </div>
