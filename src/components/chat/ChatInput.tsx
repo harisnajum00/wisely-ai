@@ -244,14 +244,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     >
       {/* Drag overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#0c0c14]/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-violet-500/50 animate-scale-in">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-violet-500/50 animate-scale-in">
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center animate-float">
               <Upload className="size-8 text-white" />
             </div>
             <div>
-              <p className="text-white font-medium text-base">Drop your image here</p>
-              <p className="text-white/40 text-sm mt-1">Images will be analyzed by Wisely</p>
+              <p className="text-foreground font-medium text-base">Drop your image here</p>
+              <p className="text-muted-foreground text-sm mt-1">Images will be analyzed by Wisely</p>
             </div>
           </div>
         </div>
@@ -263,13 +263,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           {files.map((file, index) => (
             <div
               key={`file-${index}`}
-              className="flex items-center gap-2 px-3 py-1.5 glass rounded-lg text-sm text-white/70 group"
+              className="flex items-center gap-2 px-3 py-1.5 glass rounded-lg text-sm text-muted-foreground group"
             >
-              <Paperclip className="size-3.5 text-white/40" />
+              <Paperclip className="size-3.5 text-muted-foreground/50" />
               <span className="max-w-[120px] truncate">{file.name}</span>
               <button
                 onClick={() => removeFile(index)}
-                className="text-white/30 hover:text-white/60 transition-colors"
+                className="text-muted-foreground/40 hover:text-foreground transition-colors"
               >
                 <X className="size-3.5" />
               </button>
@@ -306,7 +306,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
       {/* Paste flash indicator */}
       {pasteFlash && (
-        <div className="mb-2 flex items-center gap-2 text-violet-400 text-xs animate-message-in">
+        <div className="mb-2 flex items-center gap-2 text-primary text-xs animate-message-in">
           <ClipboardPaste className="size-3.5" />
           <span>Image added from clipboard</span>
         </div>
@@ -316,8 +316,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       <div
         className={`relative flex items-end gap-2 glass rounded-2xl p-2 transition-all duration-300 ${
           isFocused ? 'glow-border input-glow' : ''
-        } ${pasteFlash ? 'ring-1 ring-violet-500/40' : ''} ${
-          isDragOver ? 'ring-2 ring-violet-500/50 border-violet-500/30' : ''
+        } ${pasteFlash ? 'ring-1 ring-primary/40' : ''} ${
+          isDragOver ? 'ring-2 ring-primary/50 border-primary/30' : ''
         }`}
       >
         {/* Attachment buttons */}
@@ -335,14 +335,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] rounded-xl shrink-0"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled}
               >
                 <Paperclip className="size-4.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
+            <TooltipContent side="top">
               Attach file
             </TooltipContent>
           </Tooltip>
@@ -359,14 +359,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] rounded-xl shrink-0"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={disabled}
               >
                 <ImageIcon className="size-4.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
+            <TooltipContent side="top">
               Upload image
             </TooltipContent>
           </Tooltip>
@@ -376,13 +376,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] rounded-xl shrink-0"
                 disabled
               >
                 <Mic className="size-4.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
+            <TooltipContent side="top">
               Voice input (coming soon)
             </TooltipContent>
           </Tooltip>
@@ -413,7 +413,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           className={`h-8 w-8 sm:h-9 sm:w-9 p-0 rounded-xl shrink-0 transition-all duration-200 ${
             canSend
               ? 'bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-400 text-white hover:shadow-lg hover:shadow-violet-500/20'
-              : 'bg-white/5 text-white/20'
+              : 'bg-[var(--btn-ghost-bg)] text-muted-foreground/30'
           }`}
         >
           <Send className="size-4" />

@@ -100,8 +100,19 @@
   --text-secondary: rgba(0, 0, 0, 0.55);
   --text-tertiary: rgba(0, 0, 0, 0.3);
   --hover-bg: rgba(0, 0, 0, 0.04);
-  --sidebar-text: rgba(0, 0, 0, 0.6);
-  --sidebar-text-hover: rgba(0, 0, 0, 0.85);
+  --sidebar-text: rgba(0, 0, 0, 0.5);
+  --sidebar-text-hover: rgba(0, 0, 0, 0.8);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --landing-bg: #f8f8fc;
+  --divider-color: rgba(0, 0, 0, 0.06);
+  --icon-muted: rgba(0, 0, 0, 0.3);
+  --icon-muted-hover: rgba(0, 0, 0, 0.6);
+  --btn-ghost-bg: rgba(0, 0, 0, 0.04);
+  --btn-ghost-hover-bg: rgba(0, 0, 0, 0.08);
+  --code-header-bg: rgba(0, 0, 0, 0.03);
+  --inline-code-bg: rgba(124, 58, 237, 0.1);
+  --active-chat-bg: rgba(124, 58, 237, 0.08);
+  --active-chat-border: rgba(124, 58, 237, 0.15);
 }
 
 .dark {
@@ -157,6 +168,17 @@
   --hover-bg: rgba(255, 255, 255, 0.05);
   --sidebar-text: rgba(255, 255, 255, 0.5);
   --sidebar-text-hover: rgba(255, 255, 255, 0.85);
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --landing-bg: #0c0c14;
+  --divider-color: rgba(255, 255, 255, 0.06);
+  --icon-muted: rgba(255, 255, 255, 0.3);
+  --icon-muted-hover: rgba(255, 255, 255, 0.6);
+  --btn-ghost-bg: rgba(255, 255, 255, 0.05);
+  --btn-ghost-hover-bg: rgba(255, 255, 255, 0.1);
+  --code-header-bg: rgba(0, 0, 0, 0.4);
+  --inline-code-bg: rgba(124, 58, 237, 0.15);
+  --active-chat-bg: rgba(124, 58, 237, 0.15);
+  --active-chat-border: rgba(124, 58, 237, 0.2);
 }
 
 @layer base {
@@ -420,7 +442,7 @@
 }
 
 .markdown-content p code {
-  background: rgba(124, 58, 237, 0.15);
+  background: var(--inline-code-bg);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.85em;

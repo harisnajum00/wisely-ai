@@ -13,7 +13,6 @@ import {
   Trash2,
   LogOut,
   Clock,
-  Minimize2,
   AlertTriangle,
 } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
@@ -34,6 +33,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 type SettingsTab = 'general' | 'chat' | 'privacy' | 'account'
 
@@ -60,30 +60,23 @@ function SettingsToggle({ id, label, description, checked, onCheckedChange }: Se
 }
 
 export default function SettingsPanel() {
-  const { user, setUser, settingsTab, setSettingsTab, setCurrentView, chats, customInstructions, setCustomInstructions } = useAppStore()
+  const { user, setUser, settingsTab, setSettingsTab, setCurrentView, chats, customInstructions, setCustomInstructions, isDarkMode, setIsDarkMode } = useAppStore()
   const { toast } = useToast()
+  const isMobile = useIsMobile()
 
   // Local settings state
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('wisely-theme') !== 'light'
-    }
-    return true
-  })
   const [compactMode, setCompactMode] = useState(false)
   const [showTimestamps, setShowTimestamps] = useState(true)
   const [displayName, setDisplayName] = useState(user?.name || '')
   const [isEditingName, setIsEditingName] = useState(false)
 
   const handleDarkModeToggle = (checked: boolean) => {
-    setDarkMode(checked)
+    setIsDarkMode(checked)
     const html = document.documentElement
     if (checked) {
       html.classList.add('dark')
-      localStorage.setItem('wisely-theme', 'dark')
     } else {
       html.classList.remove('dark')
-      localStorage.setItem('wisely-theme', 'light')
     }
     toast({ title: checked ? 'Dark mode enabled' : 'Light mode enabled' })
   }
@@ -132,19 +125,21 @@ export default function SettingsPanel() {
     exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
   }
 
+  const tabIconSize = isMobile ? 'size-4' : 'size-4'
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 px-6 py-4 glass-strong border-b border-border/50"
+        className="flex items-center gap-3 px-4 sm:px-6 py-4 glass-strong border-b border-[var(--divider-color)]"
       >
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setCurrentView('chat')}
-          className="hover:bg-white/5 transition-colors"
+          className="hover:bg-[var(--btn-ghost-hover-bg)] transition-colors"
         >
           <ArrowLeft className="size-5" />
         </Button>
@@ -159,40 +154,53 @@ export default function SettingsPanel() {
             onValueChange={(val) => setSettingsTab(val)}
             className="flex flex-col md:flex-row gap-6"
           >
-            {/* Left side tab list */}
+            {/* Left side tab list — horizontal on mobile, vertical on desktop */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
+              className={isMobile ? 'w-full' : ''}
             >
-              <TabsList className="flex flex-col h-auto gap-1 bg-transparent p-0 w-48 shrink-0">
+              <TabsList className={`bg-transparent p-0 shrink-0 ${
+                isMobile
+                  ? 'flex flex-row h-auto gap-1 w-full overflow-x-auto pb-2'
+                  : 'flex flex-col h-auto gap-1 w-48'
+              }`}>
                 <TabsTrigger
                   value="general"
-                  className="w-full justify-start gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-white/5 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all"
+                  className={`gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-[var(--btn-ghost-hover-bg)] data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all ${
+                    isMobile ? 'flex items-center justify-center whitespace-nowrap' : 'w-full justify-start'
+                  }`}
                 >
-                  <Sun className="size-4" />
-                  General
+                  <Sun className={tabIconSize} />
+                  {!isMobile && 'General'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="chat"
-                  className="w-full justify-start gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-white/5 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all"
+                  className={`gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-[var(--btn-ghost-hover-bg)] data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all ${
+                    isMobile ? 'flex items-center justify-center whitespace-nowrap' : 'w-full justify-start'
+                  }`}
                 >
-                  <MessageSquare className="size-4" />
-                  Chat
+                  <MessageSquare className={tabIconSize} />
+                  {!isMobile && 'Chat'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="privacy"
-                  className="w-full justify-start gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-white/5 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all"
+                  className={`gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-[var(--btn-ghost-hover-bg)] data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all ${
+                    isMobile ? 'flex items-center justify-center whitespace-nowrap' : 'w-full justify-start'
+                  }`}
                 >
-                  <Shield className="size-4" />
-                  Privacy
+                  <Shield className={tabIconSize} />
+                  {!isMobile && 'Privacy'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="account"
-                  className="w-full justify-start gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-white/5 data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all"
+                  className={`gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:bg-[var(--btn-ghost-hover-bg)] data-[state=active]:text-foreground data-[state=active]:shadow-none transition-all ${
+                    isMobile ? 'flex items-center justify-center whitespace-nowrap' : 'w-full justify-start'
+                  }`}
                 >
-                  <User className="size-4" />
-                  Account
+                  <User className={tabIconSize} />
+                  {!isMobile && 'Account'}
                 </TabsTrigger>
               </TabsList>
             </motion.div>
@@ -216,11 +224,11 @@ export default function SettingsPanel() {
                       id="dark-mode"
                       label="Dark mode"
                       description="Toggle between dark and light theme"
-                      checked={darkMode}
+                      checked={isDarkMode}
                       onCheckedChange={handleDarkModeToggle}
                     />
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     <div className="flex items-center justify-between py-3">
                       <div className="space-y-0.5 pr-4">
@@ -255,7 +263,7 @@ export default function SettingsPanel() {
                       onCheckedChange={setCompactMode}
                     />
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     <SettingsToggle
                       id="show-timestamps"
@@ -265,23 +273,26 @@ export default function SettingsPanel() {
                       onCheckedChange={setShowTimestamps}
                     />
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     <div className="pt-2 space-y-2">
                       <div className="space-y-0.5">
                         <label htmlFor="custom-instructions" className="text-sm font-medium text-foreground">Custom Instructions</label>
-                        <p className="text-xs text-muted-foreground">Tell Wisely how to respond. e.g., "Always respond in Urdu" or "Be more concise"</p>
+                        <p className="text-xs text-muted-foreground">Tell Wisely how to respond. e.g., &quot;Always respond in Urdu&quot; or &quot;Be more concise&quot;</p>
                       </div>
                       <textarea
                         id="custom-instructions"
                         value={customInstructions}
                         onChange={(e) => setCustomInstructions(e.target.value)}
                         placeholder="e.g., Always respond in Urdu, Be more concise, Use simple language..."
-                        className="w-full h-24 glass rounded-lg px-3 py-2 text-sm bg-transparent border border-white/10 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground/50"
+                        className="w-full h-24 glass rounded-lg px-3 py-2 text-sm bg-transparent border border-[var(--divider-color)] focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground/50"
                       />
+                      <p className="text-xs text-muted-foreground/50">
+                        These instructions are saved automatically and applied to all new messages.
+                      </p>
                     </div>
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     <div className="pt-4">
                       <AlertDialog>
@@ -294,7 +305,7 @@ export default function SettingsPanel() {
                             Clear all chats
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="glass-strong border-border/50">
+                        <AlertDialogContent className="glass-strong border-[var(--divider-color)]">
                           <AlertDialogHeader>
                             <AlertDialogTitle className="flex items-center gap-2">
                               <AlertTriangle className="size-5 text-destructive" />
@@ -305,7 +316,7 @@ export default function SettingsPanel() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10">
+                            <AlertDialogCancel className="bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] hover:bg-[var(--btn-ghost-hover-bg)]">
                               Cancel
                             </AlertDialogCancel>
                             <AlertDialogAction
@@ -359,7 +370,7 @@ export default function SettingsPanel() {
                       </div>
                     </div>
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -371,7 +382,7 @@ export default function SettingsPanel() {
                           Delete account
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="glass-strong border-border/50">
+                      <AlertDialogContent className="glass-strong border-[var(--divider-color)]">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="size-5 text-destructive" />
@@ -382,7 +393,7 @@ export default function SettingsPanel() {
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="bg-white/5 border-white/10 hover:bg-white/10">
+                          <AlertDialogCancel className="bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] hover:bg-[var(--btn-ghost-hover-bg)]">
                             Cancel
                           </AlertDialogCancel>
                           <AlertDialogAction
@@ -418,7 +429,7 @@ export default function SettingsPanel() {
                             <Input
                               value={displayName}
                               onChange={(e) => setDisplayName(e.target.value)}
-                              className="glass border-white/10 focus:border-primary/50 input-glow"
+                              className="glass border-[var(--divider-color)] focus:border-primary/50 input-glow"
                               placeholder="Enter your name"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveName()
@@ -446,7 +457,7 @@ export default function SettingsPanel() {
                           </div>
                         ) : (
                           <div
-                            className="flex items-center justify-between glass rounded-lg px-4 py-2.5 cursor-pointer hover:bg-white/5 transition-colors group"
+                            className="flex items-center justify-between glass rounded-lg px-4 py-2.5 cursor-pointer hover:bg-[var(--hover-bg)] transition-colors group"
                             onClick={() => setIsEditingName(true)}
                           >
                             <span className="text-sm">{user?.name || 'Not set'}</span>
@@ -467,7 +478,7 @@ export default function SettingsPanel() {
                       </div>
                     </div>
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--divider-color)]" />
 
                     {/* Sign Out */}
                     <Button

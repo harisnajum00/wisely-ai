@@ -49,18 +49,18 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
         <div className="flex-1 min-w-0">
           <div className="glass rounded-2xl rounded-tl-sm px-4 py-3 inline-block">
             {imageFiles.length > 0 ? (
-              <div className="flex items-center gap-2 text-white/60 text-sm">
-                <Sparkles className="size-4 text-violet-400" />
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Sparkles className="size-4 text-primary" />
                 <span>Analyzing image...</span>
               </div>
             ) : docFiles.length > 0 ? (
-              <div className="flex items-center gap-2 text-white/60 text-sm">
-                <Sparkles className="size-4 text-violet-400" />
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Sparkles className="size-4 text-primary" />
                 <span>Reading your file...</span>
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-white/60 text-sm">Wisely is thinking</span>
+                <span className="text-muted-foreground text-sm">Wisely is thinking</span>
                 <div className="flex gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400 typing-dot-1" />
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 typing-dot-2" />
@@ -124,7 +124,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
               {docFiles.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-lg text-xs text-chat-bubble-user-text/80"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 dark:bg-white/10 rounded-lg text-xs text-chat-bubble-user-text/80"
                 >
                   <FileText className="size-3" />
                   <span className="truncate max-w-[100px]">{file.name}</span>
@@ -155,21 +155,21 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   },
                   thead({ children, ...props }) {
                     return (
-                      <thead className="border-b border-white/10" {...props}>
+                      <thead className="border-b border-[var(--divider-color)]" {...props}>
                         {children}
                       </thead>
                     )
                   },
                   tbody({ children, ...props }) {
                     return (
-                      <tbody className="divide-y divide-white/5" {...props}>
+                      <tbody className="divide-y divide-[var(--divider-color)]" {...props}>
                         {children}
                       </tbody>
                     )
                   },
                   tr({ children, ...props }) {
                     return (
-                      <tr className="hover:bg-white/[0.03] transition-colors" {...props}>
+                      <tr className="hover:bg-[var(--hover-bg)] transition-colors" {...props}>
                         {children}
                       </tr>
                     )
@@ -177,7 +177,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   th({ children, ...props }) {
                     return (
                       <th
-                        className="px-4 py-2.5 text-left text-xs font-semibold text-violet-300/90 bg-violet-500/10 whitespace-nowrap"
+                        className="px-4 py-2.5 text-left text-xs font-semibold text-violet-400/90 bg-violet-500/10 whitespace-nowrap"
                         {...props}
                       >
                         {children}
@@ -187,7 +187,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   td({ children, ...props }) {
                     return (
                       <td
-                        className="px-4 py-2.5 text-white/80 whitespace-nowrap"
+                        className="px-4 py-2.5 text-[var(--text-secondary)] whitespace-nowrap"
                         {...props}
                       >
                         {children}
@@ -204,11 +204,11 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                     if (match) {
                       return (
                         <div className="relative group my-3">
-                          <div className="flex items-center justify-between px-4 py-2 bg-black/40 rounded-t-xl border-b border-white/5">
-                            <span className="text-xs text-white/40 font-mono">{match[1]}</span>
+                          <div className="flex items-center justify-between px-4 py-2 bg-[var(--code-header-bg)] rounded-t-xl border-b border-[var(--divider-color)]">
+                            <span className="text-xs text-muted-foreground/50 font-mono">{match[1]}</span>
                             <button
                               onClick={() => copyToClipboard(codeString, blockId)}
-                              className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors"
+                              className="flex items-center gap-1 text-xs text-muted-foreground/40 hover:text-foreground transition-colors"
                             >
                               {copiedBlock === blockId ? (
                                 <>
@@ -231,7 +231,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                               margin: 0,
                               borderRadius: '0 0 0.75rem 0.75rem',
                               padding: '1rem',
-                              background: 'rgba(0, 0, 0, 0.4)',
+                              background: 'var(--code-bg)',
                               fontSize: '0.8125rem',
                             }}
                             {...props}
@@ -252,21 +252,21 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   // --- Headings ---
                   h1({ children, ...props }) {
                     return (
-                      <h1 className="text-xl font-bold text-white mt-5 mb-3 first:mt-0" {...props}>
+                      <h1 className="text-xl font-bold text-foreground mt-5 mb-3 first:mt-0" {...props}>
                         {children}
                       </h1>
                     )
                   },
                   h2({ children, ...props }) {
                     return (
-                      <h2 className="text-lg font-bold text-white mt-4 mb-2 first:mt-0" {...props}>
+                      <h2 className="text-lg font-bold text-foreground mt-4 mb-2 first:mt-0" {...props}>
                         {children}
                       </h2>
                     )
                   },
                   h3({ children, ...props }) {
                     return (
-                      <h3 className="text-base font-semibold text-white mt-3 mb-2 first:mt-0" {...props}>
+                      <h3 className="text-base font-semibold text-foreground mt-3 mb-2 first:mt-0" {...props}>
                         {children}
                       </h3>
                     )
@@ -308,7 +308,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   blockquote({ children, ...props }) {
                     return (
                       <blockquote
-                        className="border-l-3 border-violet-500/50 pl-4 my-3 text-white/60 italic"
+                        className="border-l-3 border-violet-500/50 pl-4 my-3 text-[var(--text-secondary)] italic"
                         {...props}
                       >
                         {children}
@@ -318,7 +318,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
 
                   // --- Horizontal rule ---
                   hr({ ...props }) {
-                    return <hr className="my-4 border-white/10" {...props} />
+                    return <hr className="my-4 border-[var(--divider-color)]" {...props} />
                   },
 
                   // --- Links ---
@@ -328,7 +328,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                        className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
                         {...props}
                       >
                         {children}
@@ -346,7 +346,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   },
                   em({ children, ...props }) {
                     return (
-                      <em className="text-violet-200/90 italic" {...props}>
+                      <em className="text-primary/80 italic" {...props}>
                         {children}
                       </em>
                     )
@@ -355,7 +355,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   // --- Delete (strikethrough from GFM) ---
                   del({ children, ...props }) {
                     return (
-                      <del className="line-through text-white/40" {...props}>
+                      <del className="line-through text-[var(--text-tertiary)]" {...props}>
                         {children}
                       </del>
                     )
@@ -376,7 +376,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                 variant="ghost"
                 size="icon"
                 onClick={onRegenerate}
-                className="h-7 w-7 text-white/20 hover:text-white/60 hover:bg-white/5 rounded-lg"
+                className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
                 title="Regenerate response"
               >
                 <RefreshCw className="size-3.5" />
@@ -386,7 +386,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
               variant="ghost"
               size="icon"
               onClick={() => copyToClipboard(message.content, 'full-msg')}
-              className="h-7 w-7 text-white/20 hover:text-white/60 hover:bg-white/5 rounded-lg"
+              className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
               title="Copy message"
             >
               {copiedBlock === 'full-msg' ? (

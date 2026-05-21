@@ -60,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Inline script to apply theme before first paint — prevents flash of wrong theme */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
@@ -67,6 +68,7 @@ export default function RootLayout({
               if (theme === 'light') {
                 document.documentElement.classList.remove('dark');
               } else {
+                // Default to dark mode
                 document.documentElement.classList.add('dark');
               }
             } catch(e) {

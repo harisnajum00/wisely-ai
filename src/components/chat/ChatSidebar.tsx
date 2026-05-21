@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn } from 'lucide-react'
+import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn, Sun, Moon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -17,7 +17,7 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebarProps) {
-  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated, setSidebarOpen } = useAppStore()
+  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated, setSidebarOpen, isDarkMode, setIsDarkMode } = useAppStore()
   const isMobile = useIsMobile()
 
   const isGuest = user?.id === 'guest'
@@ -42,6 +42,17 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
 
   const groupOrder = ['Today', 'Yesterday']
 
+  const handleThemeToggle = () => {
+    const newDark = !isDarkMode
+    setIsDarkMode(newDark)
+    const html = document.documentElement
+    if (newDark) {
+      html.classList.add('dark')
+    } else {
+      html.classList.remove('dark')
+    }
+  }
+
   return (
     <AnimatePresence initial={false}>
       {isOpen && (
@@ -50,7 +61,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
           animate={{ width: 280, opacity: 1 }}
           exit={{ width: 0, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="h-full flex flex-col glass border-r border-white/5 overflow-hidden shrink-0"
+          className="h-full flex flex-col glass border-r border-[var(--divider-color)] overflow-hidden shrink-0"
         >
           {/* Header */}
           <div className="p-4 flex items-center justify-between">
@@ -64,7 +75,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="text-white/40 hover:text-white/80 hover:bg-white/5 h-8 w-8"
+              className="text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] h-8 w-8"
             >
               <PanelLeftClose className="size-4" />
             </Button>
@@ -84,7 +95,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
           {/* Chat List */}
           <ScrollArea className="flex-1 px-2">
             {chats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-white/20">
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
                 <Sparkles className="size-8 mb-2" />
                 <p className="text-xs">No conversations yet</p>
               </div>
@@ -96,7 +107,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
 
                   return (
                     <div key={group} className="mb-3">
-                      <p className="text-[11px] font-medium text-white/25 uppercase tracking-wider px-2 mb-1">
+                      <p className="text-[11px] font-medium text-muted-foreground/40 uppercase tracking-wider px-2 mb-1">
                         {group}
                       </p>
                       {groupChats.map((chat) => (
@@ -104,8 +115,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                           key={chat.id}
                           className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                             currentChatId === chat.id
-                              ? 'bg-violet-500/15 border border-violet-500/20 text-white'
-                              : 'hover:bg-white/5 text-white/60 hover:text-white/90'
+                              ? 'bg-[var(--active-chat-bg)] border border-[var(--active-chat-border)] text-foreground'
+                              : 'hover:bg-[var(--hover-bg)] text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)]'
                           }`}
                           onClick={() => {
                             setCurrentChatId(chat.id)
@@ -118,7 +129,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                               e.stopPropagation()
                               deleteChat(chat.id)
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 hover:text-red-400 text-white/30 transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 hover:text-red-400 text-muted-foreground/40 transition-all"
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -132,7 +143,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                   .filter(([group]) => !groupOrder.includes(group))
                   .map(([group, groupChats]) => (
                     <div key={group} className="mb-3">
-                      <p className="text-[11px] font-medium text-white/25 uppercase tracking-wider px-2 mb-1">
+                      <p className="text-[11px] font-medium text-muted-foreground/40 uppercase tracking-wider px-2 mb-1">
                         {group}
                       </p>
                       {groupChats.map((chat) => (
@@ -140,8 +151,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                           key={chat.id}
                           className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                             currentChatId === chat.id
-                              ? 'bg-violet-500/15 border border-violet-500/20 text-white'
-                              : 'hover:bg-white/5 text-white/60 hover:text-white/90'
+                              ? 'bg-[var(--active-chat-bg)] border border-[var(--active-chat-border)] text-foreground'
+                              : 'hover:bg-[var(--hover-bg)] text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)]'
                           }`}
                           onClick={() => {
                             setCurrentChatId(chat.id)
@@ -154,7 +165,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                               e.stopPropagation()
                               deleteChat(chat.id)
                             }}
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 hover:text-red-400 text-white/30 transition-all"
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-500/20 hover:text-red-400 text-muted-foreground/40 transition-all"
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -168,29 +179,37 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
 
           {/* Bottom Section */}
           <div className="mt-auto">
-            <Separator className="bg-white/5" />
+            <Separator className="bg-[var(--divider-color)]" />
             <div className="p-3 space-y-1">
               <button
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/5 transition-all text-sm"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--hover-bg)] transition-all text-sm"
               >
                 <FileText className="size-4" />
                 Files
               </button>
               <button
                 onClick={() => setCurrentView('settings')}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/5 transition-all text-sm"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--hover-bg)] transition-all text-sm"
               >
                 <Settings className="size-4" />
                 Settings
               </button>
+              {/* Quick theme toggle */}
+              <button
+                onClick={handleThemeToggle}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--hover-bg)] transition-all text-sm"
+              >
+                {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+              </button>
             </div>
-            <Separator className="bg-white/5" />
+            <Separator className="bg-[var(--divider-color)]" />
 
             {/* Guest sign-up prompt */}
             {isGuest && (
               <div className="p-3">
                 <div className="glass rounded-xl p-3 text-center">
-                  <p className="text-xs text-white/40 mb-2">Create an account to save your chats</p>
+                  <p className="text-xs text-muted-foreground/50 mb-2">Create an account to save your chats</p>
                   <Button
                     onClick={() => {
                       setCurrentView('auth')
@@ -207,8 +226,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
 
             {/* User profile */}
             <div className="p-3">
-              <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all">
-                <Avatar className="size-8 border border-white/10">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[var(--hover-bg)] transition-all">
+                <Avatar className="size-8 border border-[var(--divider-color)]">
                   <AvatarFallback className="bg-gradient-to-br from-violet-500 to-cyan-400 text-white text-xs font-semibold">
                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
@@ -228,15 +247,24 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute top-3 left-3 z-20"
+          className="absolute top-3 left-3 z-20 flex items-center gap-2"
         >
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggle}
-            className="text-white/40 hover:text-white/80 hover:bg-white/5 h-9 w-9"
+            className="text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] h-9 w-9"
           >
             <PanelLeft className="size-5" />
+          </Button>
+          {/* Quick theme toggle in header when sidebar is closed */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleThemeToggle}
+            className="text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] h-9 w-9"
+          >
+            {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </Button>
         </motion.div>
       )}

@@ -65,7 +65,7 @@ export default function Demo({ onPromptClick }: DemoProps) {
   return (
     <section id="demo" className="relative py-24 md:py-32">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#0a0a12]" />
+      <div className="absolute inset-0 bg-[var(--landing-bg)]" />
       <div className="absolute inset-0 bg-gradient-radial" />
       <div className="absolute inset-0 bg-mesh" />
 
@@ -79,10 +79,10 @@ export default function Demo({ onPromptClick }: DemoProps) {
           className="text-center mb-14"
         >
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            <span className="text-white/90">Try </span>
+            <span className="text-foreground/90">Try </span>
             <span className="gradient-text-warm">Wisely</span>
           </h2>
-          <p className="text-white/50 text-base md:text-lg max-w-lg mx-auto">
+          <p className="text-muted-foreground/60 text-base md:text-lg max-w-lg mx-auto">
             See what Wisely can do for you. Pick a prompt to get started.
           </p>
         </motion.div>
@@ -104,25 +104,25 @@ export default function Demo({ onPromptClick }: DemoProps) {
                 onClick={() => onPromptClick(card.prompt)}
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.98 }}
-                className="glass card-hover rounded-2xl p-5 text-left group cursor-pointer border border-white/[0.04] hover:border-violet-500/20 hover:shadow-[0_0_30px_rgba(124,58,237,0.08)] transition-all duration-300"
+                className="glass card-hover rounded-2xl p-5 text-left group cursor-pointer border border-[var(--divider-color)] hover:border-primary/20 hover:shadow-[0_0_30px_rgba(124,58,237,0.08)] transition-all duration-300"
               >
                 {/* Icon + Label */}
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="size-9 rounded-lg bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-white/[0.06] group-hover:border-violet-500/30 transition-colors duration-300">
-                    <Icon className="size-4 text-violet-400 group-hover:text-cyan-400 transition-colors duration-300" />
+                  <div className="size-9 rounded-lg bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-[var(--divider-color)] group-hover:border-primary/30 transition-colors duration-300">
+                    <Icon className="size-4 text-primary group-hover:text-cyan-500 transition-colors duration-300" />
                   </div>
-                  <span className="text-[10px] font-medium uppercase tracking-wider text-white/30 group-hover:text-violet-400/60 transition-colors duration-300">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/30 group-hover:text-primary/60 transition-colors duration-300">
                     {card.label}
                   </span>
                 </div>
 
                 {/* Prompt Text */}
-                <p className="text-white/70 text-sm font-medium group-hover:text-white/90 transition-colors duration-300">
+                <p className="text-foreground/70 text-sm font-medium group-hover:text-foreground/90 transition-colors duration-300">
                   &ldquo;{card.prompt}&rdquo;
                 </p>
 
                 {/* Hover arrow */}
-                <div className="mt-3 flex items-center gap-1.5 text-violet-400/0 group-hover:text-violet-400/80 transition-all duration-300">
+                <div className="mt-3 flex items-center gap-1.5 text-primary/0 group-hover:text-primary/80 transition-all duration-300">
                   <span className="text-xs font-medium">Try it</span>
                   <svg
                     className="size-3 group-hover:translate-x-1 transition-transform duration-300"

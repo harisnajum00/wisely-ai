@@ -35,7 +35,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
       transition={{ duration: 0.6, ease: 'easeOut' }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#0c0c14]/80 backdrop-blur-xl border-b border-white/[0.06]'
+          ? 'bg-background/80 backdrop-blur-xl border-b border-[var(--divider-color)]'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
@@ -44,8 +44,8 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="relative">
-              <Sparkles className="size-6 text-violet-400" />
-              <div className="absolute inset-0 size-6 bg-violet-400/20 blur-md rounded-full" />
+              <Sparkles className="size-6 text-violet-500" />
+              <div className="absolute inset-0 size-6 bg-violet-500/20 blur-md rounded-full" />
             </div>
             <span className="gradient-text text-lg font-semibold tracking-tight">
               Wisely by Haris
@@ -58,7 +58,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
               <button
                 key={link.label}
                 onClick={link.onClick}
-                className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors duration-200 rounded-lg hover:bg-white/[0.04]"
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-lg hover:bg-[var(--hover-bg)]"
               >
                 {link.label}
               </button>
@@ -70,7 +70,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
             <Button
               variant="ghost"
               onClick={onSignIn}
-              className="text-white/60 hover:text-white hover:bg-white/[0.06] text-sm"
+              className="text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] text-sm"
             >
               Sign In
             </Button>
@@ -85,7 +85,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-white/60 hover:text-white transition-colors"
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -100,7 +100,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.2 }}
-          className="md:hidden bg-[#0c0c14]/95 backdrop-blur-xl border-b border-white/[0.06]"
+          className="md:hidden bg-background/95 backdrop-blur-xl border-b border-[var(--divider-color)]"
         >
           <div className="px-4 py-4 space-y-2">
             {navLinks.map((link) => (
@@ -110,19 +110,19 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
                   link.onClick()
                   setMobileOpen(false)
                 }}
-                className="block w-full text-left px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors"
+                className="block w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
               >
                 {link.label}
               </button>
             ))}
-            <div className="pt-2 border-t border-white/[0.06] flex flex-col gap-2">
+            <div className="pt-2 border-t border-[var(--divider-color)] flex flex-col gap-2">
               <Button
                 variant="ghost"
                 onClick={() => {
                   onSignIn()
                   setMobileOpen(false)
                 }}
-                className="w-full text-white/60 hover:text-white hover:bg-white/[0.06] text-sm justify-center"
+                className="w-full text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] text-sm justify-center"
               >
                 Sign In
               </Button>

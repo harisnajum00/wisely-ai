@@ -39,10 +39,27 @@ export default function Home() {
     setSidebarOpen,
     createNewChat,
     addMessage,
+    hydrate,
+    isDarkMode,
   } = useAppStore()
 
   const landingRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
+
+  // Hydrate store from localStorage on mount
+  useEffect(() => {
+    hydrate()
+  }, [hydrate])
+
+  // Apply theme class whenever isDarkMode changes
+  useEffect(() => {
+    const html = document.documentElement
+    if (isDarkMode) {
+      html.classList.add('dark')
+    } else {
+      html.classList.remove('dark')
+    }
+  }, [isDarkMode])
 
   // Check session on mount
   useEffect(() => {
@@ -193,7 +210,7 @@ export default function Home() {
           >
             {/* Mobile sidebar overlay */}
             {isMobile && sidebarOpen && (
-              <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={handleToggleSidebar} />
+              <div className="fixed inset-0 z-40 bg-[var(--overlay-bg)] backdrop-blur-sm" onClick={handleToggleSidebar} />
             )}
             {/* Sidebar - mobile: fixed overlay, desktop: inline */}
             <div className={isMobile && sidebarOpen ? 'fixed inset-y-0 left-0 z-50' : ''}>

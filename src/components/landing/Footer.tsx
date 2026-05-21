@@ -4,8 +4,8 @@ import { Sparkles } from 'lucide-react'
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.06]">
-      <div className="absolute inset-0 bg-[#0a0a12]" />
+    <footer className="relative border-t border-[var(--divider-color)]">
+      <div className="absolute inset-0 bg-[var(--landing-bg)]" />
       <div className="absolute inset-0 bg-gradient-radial-bottom" />
 
       <motion.div
@@ -18,7 +18,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <Sparkles className="size-4 text-violet-400/70" />
+            <Sparkles className="size-4 text-primary/70" />
             <span className="gradient-text text-sm font-semibold tracking-tight">
               Wisely by Haris
             </span>
@@ -28,26 +28,26 @@ export default function Footer() {
           <nav className="flex items-center gap-6" aria-label="Footer navigation">
             <a
               href="#privacy"
-              className="text-xs text-white/40 hover:text-white/70 transition-colors duration-200"
+              className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors duration-200"
             >
               Privacy
             </a>
             <a
               href="#terms"
-              className="text-xs text-white/40 hover:text-white/70 transition-colors duration-200"
+              className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors duration-200"
             >
               Terms
             </a>
             <a
               href="#contact"
-              className="text-xs text-white/40 hover:text-white/70 transition-colors duration-200"
+              className="text-xs text-muted-foreground/50 hover:text-foreground/70 transition-colors duration-200"
             >
               Contact
             </a>
           </nav>
 
           {/* Copyright */}
-          <p className="text-[11px] text-white/25">
+          <p className="text-[11px] text-muted-foreground/30">
             &copy; {new Date().getFullYear()} Wisely by Haris. All rights reserved.
           </p>
         </div>

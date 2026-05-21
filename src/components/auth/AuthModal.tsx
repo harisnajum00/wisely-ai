@@ -158,7 +158,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-bg)] backdrop-blur-sm"
         onClick={(e) => {
           if (e.target === e.currentTarget) handleClose()
         }}
@@ -174,7 +174,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 p-2 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition-all"
+            className="absolute top-4 right-4 p-2 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-[var(--hover-bg)] transition-all"
           >
             <X className="size-5" />
           </button>
@@ -184,10 +184,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 mb-4">
               <span className="text-2xl font-bold text-white">W</span>
             </div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-foreground">
               {isLogin ? 'Welcome to Wisely' : 'Create Account'}
             </h2>
-            <p className="text-white/40 mt-1 text-sm">
+            <p className="text-muted-foreground/60 mt-1 text-sm">
               {isLogin ? 'Sign in to continue your journey' : 'Start your AI experience today'}
             </p>
           </div>
@@ -199,7 +199,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm"
               >
                 {error}
               </motion.div>
@@ -210,7 +210,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl mb-4"
+            className="w-full h-11 bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] hover:bg-[var(--btn-ghost-hover-bg)] hover:border-foreground/20 text-foreground rounded-xl mb-4"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
@@ -221,10 +221,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           {/* Divider */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-[var(--divider-color)]" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-[#12121c] text-white/30">or continue with email</span>
+              <span className="px-3 bg-background text-muted-foreground/40">or continue with email</span>
             </div>
           </div>
 
@@ -237,13 +237,13 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 exit={{ opacity: 0, height: 0 }}
               >
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" />
                   <Input
                     type="text"
                     placeholder="Full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-11 pl-10 bg-white/5 border-white/10 focus:border-violet-500/50 text-white placeholder:text-white/30 rounded-xl"
+                    className="h-11 pl-10 bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] focus:border-primary/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl"
                     disabled={loading}
                   />
                 </div>
@@ -251,25 +251,25 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             )}
 
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" />
               <Input
                 type="email"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11 pl-10 bg-white/5 border-white/10 focus:border-violet-500/50 text-white placeholder:text-white/30 rounded-xl"
+                className="h-11 pl-10 bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] focus:border-primary/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl"
                 disabled={loading}
               />
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" />
               <Input
                 type="password"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-11 pl-10 bg-white/5 border-white/10 focus:border-violet-500/50 text-white placeholder:text-white/30 rounded-xl"
+                className="h-11 pl-10 bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] focus:border-primary/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl"
                 disabled={loading}
               />
             </div>
@@ -281,13 +281,13 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 exit={{ opacity: 0, height: 0 }}
               >
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-white/30" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" />
                   <Input
                     type="password"
                     placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-11 pl-10 bg-white/5 border-white/10 focus:border-violet-500/50 text-white placeholder:text-white/30 rounded-xl"
+                    className="h-11 pl-10 bg-[var(--btn-ghost-bg)] border-[var(--divider-color)] focus:border-primary/50 text-foreground placeholder:text-muted-foreground/40 rounded-xl"
                     disabled={loading}
                   />
                 </div>
@@ -310,11 +310,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           </form>
 
           {/* Toggle mode */}
-          <p className="text-center text-sm text-white/40 mt-6">
+          <p className="text-center text-sm text-muted-foreground/50 mt-6">
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={toggleMode}
-              className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+              className="text-primary hover:text-primary/80 font-medium transition-colors"
             >
               {isLogin ? 'Sign up' : 'Sign in'}
             </button>

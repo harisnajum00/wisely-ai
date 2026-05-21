@@ -239,11 +239,11 @@ export default function ChatArea() {
             // Immediately set a temporary title
             updateChat(chatId, { title: message.trim().slice(0, 50) })
 
-            // Then generate a smart title in the background
+            // Then generate a smart title in the background (with AI response for better context)
             fetch('/api/chat/title', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: message.trim() }),
+              body: JSON.stringify({ message: message.trim(), response: fullContent.slice(0, 300) }),
             })
               .then(res => res.json())
               .then(data => {

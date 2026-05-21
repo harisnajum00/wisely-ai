@@ -59,16 +59,16 @@ function MockChatPreview() {
       className="glass-strong rounded-2xl p-1 shadow-2xl glow-subtle w-full max-w-md"
     >
       {/* Chat Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--divider-color)]">
         <div className="relative">
           <div className="size-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
             <Bot className="size-3.5 text-white" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-emerald-400 rounded-full border-2 border-[#12121c]" />
+          <div className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-emerald-400 rounded-full border-2 border-background" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white/90">Wisely AI</p>
-          <p className="text-[10px] text-emerald-400/80">Online</p>
+          <p className="text-sm font-medium text-foreground/90">Wisely AI</p>
+          <p className="text-[10px] text-emerald-500/80">Online</p>
         </div>
       </div>
 
@@ -82,13 +82,13 @@ function MockChatPreview() {
             transition={{ duration: 0.3 }}
             className="flex items-start gap-2.5 justify-end"
           >
-            <div className="bg-gradient-to-br from-violet-500/20 to-indigo-500/10 border border-violet-500/20 rounded-2xl rounded-tr-md px-3.5 py-2.5 max-w-[80%]">
-              <p className="text-xs text-white/80 leading-relaxed">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-md px-3.5 py-2.5 max-w-[80%]">
+              <p className="text-xs text-foreground/80 leading-relaxed">
                 Explain quantum computing simply
               </p>
             </div>
-            <div className="size-6 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <User className="size-3 text-white/60" />
+            <div className="size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <User className="size-3 text-muted-foreground" />
             </div>
           </motion.div>
         )}
@@ -104,8 +104,8 @@ function MockChatPreview() {
             <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
               <Bot className="size-3 text-white" />
             </div>
-            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl rounded-tl-md px-3.5 py-2.5 max-w-[80%]">
-              <p className="text-xs text-white/70 leading-relaxed">
+            <div className="glass border border-[var(--divider-color)] rounded-2xl rounded-tl-md px-3.5 py-2.5 max-w-[80%]">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Think of a regular computer as a coin — heads or tails. A quantum computer is like a
                 spinning coin that&apos;s both at once. This lets it explore many answers simultaneously,
                 solving certain problems exponentially faster. ⚡
@@ -125,7 +125,7 @@ function MockChatPreview() {
             <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
               <Bot className="size-3 text-white" />
             </div>
-            <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl rounded-tl-md">
+            <div className="glass border border-[var(--divider-color)] rounded-2xl rounded-tl-md">
               <TypingIndicator />
             </div>
           </motion.div>
@@ -134,8 +134,8 @@ function MockChatPreview() {
 
       {/* Chat Input */}
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3.5 py-2.5">
-          <span className="text-xs text-white/30 flex-1">Ask Wisely anything...</span>
+        <div className="flex items-center gap-2 glass border border-[var(--divider-color)] rounded-xl px-3.5 py-2.5">
+          <span className="text-xs text-muted-foreground/40 flex-1">Ask Wisely anything...</span>
           <div className="size-6 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
             <ArrowRight className="size-3 text-white" />
           </div>
@@ -149,7 +149,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background layers */}
-      <div className="absolute inset-0 bg-[#0c0c14]" />
+      <div className="absolute inset-0 bg-[var(--landing-bg)]" />
       <div className="absolute inset-0 bg-gradient-radial" />
       <div className="absolute inset-0 bg-mesh" />
       <div className="absolute inset-0 noise-overlay" />
@@ -172,7 +172,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
           >
             {/* Badge */}
             <motion.div variants={itemVariants} className="mb-6">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glow-border bg-violet-500/[0.08] text-xs font-medium text-violet-300/90">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glow-border bg-primary/[0.08] text-xs font-medium text-primary">
                 <Sparkles className="size-3" />
                 Free for a limited time
               </span>
@@ -185,13 +185,13 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             >
               <span className="gradient-text-warm">Wisely</span>
               <br />
-              <span className="text-white/90">by Haris</span>
+              <span className="text-foreground/90">by Haris</span>
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p
               variants={itemVariants}
-              className="text-xl md:text-2xl text-white/70 font-light mb-4"
+              className="text-xl md:text-2xl text-muted-foreground font-light mb-4"
             >
               Ask anything. Understand everything.
             </motion.p>
@@ -199,7 +199,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             {/* Description */}
             <motion.p
               variants={itemVariants}
-              className="text-white/50 max-w-2xl text-base leading-relaxed mb-8 mx-auto lg:mx-0"
+              className="text-muted-foreground/60 max-w-2xl text-base leading-relaxed mb-8 mx-auto lg:mx-0"
             >
               Your AI assistant for conversation, files, images, learning, and creativity.
               Powered by cutting-edge intelligence to help you think deeper, work faster, and
@@ -222,7 +222,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
               <Button
                 variant="ghost"
                 onClick={onLearnMore}
-                className="text-white/60 hover:text-white hover:bg-white/[0.06] text-base h-11 px-8 rounded-xl border border-white/[0.08]"
+                className="text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] text-base h-11 px-8 rounded-xl border border-[var(--divider-color)]"
                 size="lg"
               >
                 Learn More

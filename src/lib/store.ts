@@ -35,6 +35,26 @@ export interface User {
   image?: string
 }
 
+// Load persisted state from localStorage
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function saveToStorage(key: string, value: unknown) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
 interface AppState {
   // Navigation
   currentView: AppView
@@ -64,6 +84,11 @@ interface AppState {
   setSettingsTab: (tab: string) => void
   customInstructions: string
   setCustomInstructions: (instructions: string) => void
+  isDarkMode: boolean
+  setIsDarkMode: (dark: boolean) => void
+
+  // Initialization
+  hydrate: () => void
 
   // Helpers
   getCurrentChat: () => Chat | undefined
@@ -120,7 +145,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsTab: 'general',
   setSettingsTab: (tab) => set({ settingsTab: tab }),
   customInstructions: '',
-  setCustomInstructions: (instructions) => set({ customInstructions: instructions }),
+  setCustomInstructions: (instructions) => {
+    saveToStorage('wisely-custom-instructions', instructions)
+    set({ customInstructions: instructions })
+  },
+  isDarkMode: true,
+  setIsDarkMode: (dark) => {
+    saveToStorage('wisely-theme', dark ? 'dark' : 'light')
+    set({ isDarkMode: dark })
+  },
+
+  // Hydrate from localStorage on client mount
+  hydrate: () => {
+    const customInstructions = loadFromStorage<string>('wisely-custom-instructions', '')
+    const themeRaw = loadFromStorage<string>('wisely-theme', 'dark')
+    const isDarkMode = themeRaw !== 'light'
+    set({ customInstructions, isDarkMode })
+  },
 
   // Helpers
   getCurrentChat: () => {

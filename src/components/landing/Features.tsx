@@ -71,7 +71,7 @@ export default function Features() {
   return (
     <section id="features" className="relative py-24 md:py-32">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#0c0c14]" />
+      <div className="absolute inset-0 bg-[var(--landing-bg)]" />
       <div className="absolute inset-0 bg-gradient-radial-bottom" />
       <div className="absolute inset-0 bg-mesh" />
 
@@ -86,9 +86,9 @@ export default function Features() {
         >
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
             <span className="gradient-text-warm">What Wisely</span>{' '}
-            <span className="text-white/90">Can Do</span>
+            <span className="text-foreground/90">Can Do</span>
           </h2>
-          <p className="text-white/50 text-base md:text-lg max-w-xl mx-auto">
+          <p className="text-muted-foreground/60 text-base md:text-lg max-w-xl mx-auto">
             Powerful AI capabilities designed to assist you across every domain.
           </p>
         </motion.div>
@@ -111,20 +111,20 @@ export default function Features() {
               >
                 {/* Icon */}
                 <div className="relative mb-5">
-                  <div className="size-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-white/[0.06] group-hover:border-violet-500/30 transition-colors duration-300">
-                    <Icon className="size-5 text-violet-400 group-hover:text-cyan-400 transition-colors duration-300" />
+                  <div className="size-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-[var(--divider-color)] group-hover:border-primary/30 transition-colors duration-300">
+                    <Icon className="size-5 text-primary group-hover:text-cyan-500 transition-colors duration-300" />
                   </div>
                   {/* Subtle glow behind icon on hover */}
-                  <div className="absolute inset-0 size-11 rounded-xl bg-violet-500/0 group-hover:bg-violet-500/10 blur-xl transition-all duration-500" />
+                  <div className="absolute inset-0 size-11 rounded-xl bg-primary/0 group-hover:bg-primary/10 blur-xl transition-all duration-500" />
                 </div>
 
                 {/* Title */}
-                <h3 className="text-white/90 font-semibold text-base mb-2 group-hover:text-white transition-colors duration-300">
+                <h3 className="text-foreground/90 font-semibold text-base mb-2 group-hover:text-foreground transition-colors duration-300">
                   {feature.title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-white/50 text-sm leading-relaxed group-hover:text-white/60 transition-colors duration-300">
+                <p className="text-muted-foreground/60 text-sm leading-relaxed group-hover:text-muted-foreground/80 transition-colors duration-300">
                   {feature.description}
                 </p>
               </motion.div>

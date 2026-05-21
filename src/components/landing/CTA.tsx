@@ -11,7 +11,7 @@ export default function CTA({ onGetStarted }: CTAProps) {
   return (
     <section className="relative py-24 md:py-32">
       {/* Background */}
-      <div className="absolute inset-0 bg-[#0c0c14]" />
+      <div className="absolute inset-0 bg-[var(--landing-bg)]" />
 
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden">
@@ -57,20 +57,20 @@ export default function CTA({ onGetStarted }: CTAProps) {
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             className="inline-flex items-center justify-center mb-6"
           >
-            <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-white/[0.08] glow-primary">
-              <Sparkles className="size-7 text-violet-400" />
+            <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-400/10 flex items-center justify-center border border-[var(--divider-color)] glow-primary">
+              <Sparkles className="size-7 text-primary" />
             </div>
           </motion.div>
 
           {/* Heading */}
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            <span className="text-white/90">Ready to experience </span>
+            <span className="text-foreground/90">Ready to experience </span>
             <span className="gradient-text-warm">Wisely</span>
-            <span className="text-white/90">?</span>
+            <span className="text-foreground/90">?</span>
           </h2>
 
           {/* Subtext */}
-          <p className="text-white/50 text-base md:text-lg max-w-lg mx-auto mb-8 leading-relaxed">
+          <p className="text-muted-foreground/60 text-base md:text-lg max-w-lg mx-auto mb-8 leading-relaxed">
             Start your AI journey today — free for a limited time. No credit card required.
           </p>
 
