@@ -14,6 +14,7 @@ export default function ChatArea() {
     currentChatId,
     createNewChat,
     updateChat,
+    customInstructions,
   } = useAppStore()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -153,12 +154,7 @@ export default function ChatArea() {
       }
       addMessage(chatId, userMessage)
 
-      // Auto-generate title from first message
-      const chat = useAppStore.getState().chats.find((c) => c.id === chatId)
-      if (chat?.title === 'New Chat' && message.trim()) {
-        const title = message.trim().slice(0, 50) + (message.trim().length > 50 ? '...' : '')
-        updateChat(chatId, { title })
-      }
+
 
       // Add assistant placeholder
       const assistantMessageId = crypto.randomUUID()
@@ -194,6 +190,7 @@ export default function ChatArea() {
             messages: apiMessages,
             files: files?.map((f) => f.name),
             imageBase64,
+            customInstructions,
           }),
         })
 
@@ -235,6 +232,31 @@ export default function ChatArea() {
             content: fullContent,
             isLoading: false,
           })
+
+          // Generate smart title after first exchange
+          const chat = useAppStore.getState().chats.find((c) => c.id === chatId)
+          if (chat?.title === 'New Chat' && message.trim()) {
+            // Immediately set a temporary title
+            updateChat(chatId, { title: message.trim().slice(0, 50) })
+
+            // Then generate a smart title in the background
+            fetch('/api/chat/title', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: message.trim() }),
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.title) {
+                  // Only update if the chat still exists and still has the temp title
+                  const currentChat = useAppStore.getState().chats.find((c) => c.id === chatId)
+                  if (currentChat) {
+                    updateChat(chatId, { title: data.title })
+                  }
+                }
+              })
+              .catch(() => { /* Silently fail, temp title is fine */ })
+          }
         } else {
           // Fallback for non-streaming error responses
           const data = await res.json().catch(() => ({}))
@@ -253,7 +275,7 @@ export default function ChatArea() {
 
       scrollToBottom()
     },
-    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, bufferedUpdate]
+    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, bufferedUpdate, customInstructions]
   )
 
   const handleRegenerate = useCallback(
@@ -339,7 +361,7 @@ export default function ChatArea() {
   )
 
   return (
-    <div className="flex-1 flex flex-col h-full relative bg-[#0c0c14]">
+    <div className="flex-1 flex flex-col h-full relative bg-chat-bg">
       {/* Messages area */}
       <div
         ref={scrollContainerRef}

@@ -41,7 +41,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex gap-3 px-4 py-3 max-w-4xl mx-auto"
+        className="flex gap-3 px-2 py-2 sm:px-4 sm:py-3 max-w-4xl mx-auto"
       >
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center shrink-0 mt-1">
           <Sparkles className="size-4 text-white" />
@@ -79,14 +79,14 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex gap-3 px-4 py-3 max-w-4xl mx-auto ${
+      className={`flex gap-3 px-2 py-2 sm:px-4 sm:py-3 max-w-4xl mx-auto ${
         isUser ? 'flex-row-reverse' : ''
       }`}
     >
       {/* Avatar */}
       {isUser ? (
-        <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 mt-1">
-          <User className="size-4 text-white/60" />
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-400/20 flex items-center justify-center shrink-0 mt-1">
+          <User className="size-4 text-muted-foreground" />
         </div>
       ) : (
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center shrink-0 mt-1">
@@ -97,10 +97,10 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
       {/* Message content */}
       <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
         <div
-          className={`inline-block max-w-[90%] rounded-2xl px-4 py-3 ${
+          className={`inline-block max-w-[95%] sm:max-w-[90%] rounded-2xl px-4 py-3 ${
             isUser
-              ? 'bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white rounded-tr-sm'
-              : 'glass text-white/90 rounded-tl-sm'
+              ? 'bg-chat-bubble-user text-chat-bubble-user-text rounded-tr-sm'
+              : 'glass text-chat-bubble-ai-text rounded-tl-sm'
           }`}
         >
           {/* Show image attachments for user messages */}
@@ -124,7 +124,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
               {docFiles.map((file, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-lg text-xs text-white/80"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-lg text-xs text-chat-bubble-user-text/80"
                 >
                   <FileText className="size-3" />
                   <span className="truncate max-w-[100px]">{file.name}</span>
@@ -298,7 +298,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   },
                   li({ children, ...props }) {
                     return (
-                      <li className="leading-relaxed text-white/85" {...props}>
+                      <li className="leading-relaxed text-foreground/85" {...props}>
                         {children}
                       </li>
                     )
@@ -339,7 +339,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   // --- Strong & Emphasis ---
                   strong({ children, ...props }) {
                     return (
-                      <strong className="font-semibold text-white" {...props}>
+                      <strong className="font-semibold text-foreground" {...props}>
                         {children}
                       </strong>
                     )

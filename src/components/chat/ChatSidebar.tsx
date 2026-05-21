@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { useAppStore } from '@/lib/store'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { format } from 'date-fns'
 
 interface ChatSidebarProps {
@@ -16,7 +17,8 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebarProps) {
-  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated } = useAppStore()
+  const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated, setSidebarOpen } = useAppStore()
+  const isMobile = useIsMobile()
 
   const isGuest = user?.id === 'guest'
 
@@ -56,7 +58,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center">
                 <Sparkles className="size-4 text-white" />
               </div>
-              <span className="font-semibold text-white text-lg">Wisely</span>
+              <span className="font-semibold text-foreground text-lg">Wisely</span>
             </div>
             <Button
               variant="ghost"
@@ -105,7 +107,10 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                               ? 'bg-violet-500/15 border border-violet-500/20 text-white'
                               : 'hover:bg-white/5 text-white/60 hover:text-white/90'
                           }`}
-                          onClick={() => setCurrentChatId(chat.id)}
+                          onClick={() => {
+                            setCurrentChatId(chat.id)
+                            if (isMobile) setSidebarOpen(false)
+                          }}
                         >
                           <span className="truncate text-sm flex-1">{chat.title}</span>
                           <button
@@ -138,7 +143,10 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                               ? 'bg-violet-500/15 border border-violet-500/20 text-white'
                               : 'hover:bg-white/5 text-white/60 hover:text-white/90'
                           }`}
-                          onClick={() => setCurrentChatId(chat.id)}
+                          onClick={() => {
+                            setCurrentChatId(chat.id)
+                            if (isMobile) setSidebarOpen(false)
+                          }}
                         >
                           <span className="truncate text-sm flex-1">{chat.title}</span>
                           <button
@@ -206,8 +214,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white/80 truncate">{user?.name || 'User'}</p>
-                  <p className="text-xs text-white/30 truncate">{user?.email || 'Guest mode'}</p>
+                  <p className="text-sm text-foreground/80 truncate">{user?.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground/50 truncate">{user?.email || 'Guest mode'}</p>
                 </div>
               </div>
             </div>

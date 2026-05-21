@@ -60,11 +60,16 @@ function SettingsToggle({ id, label, description, checked, onCheckedChange }: Se
 }
 
 export default function SettingsPanel() {
-  const { user, setUser, settingsTab, setSettingsTab, setCurrentView, chats } = useAppStore()
+  const { user, setUser, settingsTab, setSettingsTab, setCurrentView, chats, customInstructions, setCustomInstructions } = useAppStore()
   const { toast } = useToast()
 
   // Local settings state
-  const [darkMode, setDarkMode] = useState(true)
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('wisely-theme') !== 'light'
+    }
+    return true
+  })
   const [compactMode, setCompactMode] = useState(false)
   const [showTimestamps, setShowTimestamps] = useState(true)
   const [displayName, setDisplayName] = useState(user?.name || '')
@@ -75,13 +80,12 @@ export default function SettingsPanel() {
     const html = document.documentElement
     if (checked) {
       html.classList.add('dark')
+      localStorage.setItem('wisely-theme', 'dark')
     } else {
       html.classList.remove('dark')
+      localStorage.setItem('wisely-theme', 'light')
     }
-    toast({
-      title: checked ? 'Dark mode enabled' : 'Light mode enabled',
-      description: 'Theme preference updated.',
-    })
+    toast({ title: checked ? 'Dark mode enabled' : 'Light mode enabled' })
   }
 
   const handleClearChats = () => {
@@ -260,6 +264,22 @@ export default function SettingsPanel() {
                       checked={showTimestamps}
                       onCheckedChange={setShowTimestamps}
                     />
+
+                    <Separator className="bg-white/5" />
+
+                    <div className="pt-2 space-y-2">
+                      <div className="space-y-0.5">
+                        <label htmlFor="custom-instructions" className="text-sm font-medium text-foreground">Custom Instructions</label>
+                        <p className="text-xs text-muted-foreground">Tell Wisely how to respond. e.g., "Always respond in Urdu" or "Be more concise"</p>
+                      </div>
+                      <textarea
+                        id="custom-instructions"
+                        value={customInstructions}
+                        onChange={(e) => setCustomInstructions(e.target.value)}
+                        placeholder="e.g., Always respond in Urdu, Be more concise, Use simple language..."
+                        className="w-full h-24 glass rounded-lg px-3 py-2 text-sm bg-transparent border border-white/10 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none placeholder:text-muted-foreground/50"
+                      />
+                    </div>
 
                     <Separator className="bg-white/5" />
 

@@ -52,7 +52,7 @@ const VISION_MODEL = "openrouter/free"
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, files, imageBase64 } = await request.json()
+    const { messages, files, imageBase64, customInstructions } = await request.json()
     const apiKey = process.env.OPENROUTER_API_KEY
 
     if (!apiKey) {
@@ -64,9 +64,15 @@ export async function POST(request: NextRequest) {
 
     const hasImage = imageBase64 && imageBase64.length > 100
 
+    // Build system prompt with optional custom instructions
+    let systemPrompt = hasImage ? VISION_SYSTEM_PROMPT : SYSTEM_PROMPT
+    if (customInstructions && customInstructions.trim()) {
+      systemPrompt += `\n\nUSER CUSTOM INSTRUCTIONS (follow these preferences):\n${customInstructions.trim()}`
+    }
+
     // Build messages array (OpenAI-compatible format)
     const formattedMessages: Array<any> = [
-      { role: "system", content: hasImage ? VISION_SYSTEM_PROMPT : SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
     ]
 
     // Add conversation history

@@ -63,7 +63,7 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="text-3xl font-bold text-white mb-2"
+        className="text-3xl font-bold text-foreground mb-2"
       >
         How can I help today?
       </motion.h2>
@@ -72,7 +72,7 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="text-white/30 text-sm mb-10"
+        className="text-muted-foreground/50 text-sm mb-10"
       >
         Ask me anything or try a suggestion below
       </motion.p>
@@ -100,10 +100,10 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
             >
               <suggestion.icon className="size-5 text-white" />
             </div>
-            <h3 className="text-sm font-medium text-white/80 group-hover:text-white transition-colors mb-1">
+            <h3 className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors mb-1">
               {suggestion.title}
             </h3>
-            <p className="text-xs text-white/25 group-hover:text-white/40 transition-colors line-clamp-2">
+            <p className="text-xs text-muted-foreground/50 group-hover:text-muted-foreground/70 transition-colors line-clamp-2">
               {suggestion.prompt}
             </p>
           </motion.button>

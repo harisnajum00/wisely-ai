@@ -237,7 +237,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-4xl mx-auto px-4 pb-4 pt-2 relative"
+      className="w-full max-w-4xl mx-auto px-3 pb-3 pt-2 sm:px-4 sm:pb-4 relative"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -335,7 +335,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled}
               >
@@ -359,7 +359,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={disabled}
               >
@@ -376,7 +376,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                className="h-8 w-8 sm:h-9 sm:w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
                 disabled
               >
                 <Mic className="size-4.5" />
@@ -400,17 +400,17 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           onPaste={handlePaste}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Ask Wisely anything... (paste images with Ctrl+V)"
+          placeholder="Ask Wisely anything..."
           disabled={disabled}
           rows={1}
-          className="flex-1 bg-transparent text-white text-sm placeholder:text-white/25 resize-none outline-none py-2.5 px-1 max-h-[144px] min-h-[36px] leading-relaxed"
+          className="flex-1 bg-transparent text-foreground text-sm placeholder:text-[var(--input-placeholder)] resize-none outline-none py-2.5 px-1 max-h-[144px] min-h-[36px] leading-relaxed"
         />
 
         {/* Send button */}
         <Button
           onClick={handleSend}
           disabled={!canSend || disabled}
-          className={`h-9 w-9 p-0 rounded-xl shrink-0 transition-all duration-200 ${
+          className={`h-8 w-8 sm:h-9 sm:w-9 p-0 rounded-xl shrink-0 transition-all duration-200 ${
             canSend
               ? 'bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-400 text-white hover:shadow-lg hover:shadow-violet-500/20'
               : 'bg-white/5 text-white/20'
@@ -420,8 +420,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         </Button>
       </div>
 
-      <p className="text-center text-[11px] text-white/15 mt-2">
-        Wisely can make mistakes. Consider checking important information. Paste or drop images directly.
+      <p className="text-center text-[11px] text-muted-foreground/40 mt-2">
+        Wisely can make mistakes. Consider checking important information.
       </p>
     </div>
   )

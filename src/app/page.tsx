@@ -14,6 +14,7 @@ import AuthModal from '@/components/auth/AuthModal'
 import ChatSidebar from '@/components/chat/ChatSidebar'
 import ChatArea from '@/components/chat/ChatArea'
 import SettingsPanel from '@/components/settings/SettingsPanel'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const viewVariants = {
   initial: { opacity: 0 },
@@ -63,6 +64,8 @@ export default function Home() {
     }
     checkSession()
   }, [setUser, setCurrentView])
+
+  const isMobile = useIsMobile()
 
   // Landing page handlers
   const handleGetStarted = () => {
@@ -123,6 +126,13 @@ export default function Home() {
     createNewChat()
   }
 
+  // Auto-close sidebar on mobile
+  useEffect(() => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false)
+    }
+  }, [isMobile])
+
   const handleToggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
   }
@@ -179,14 +189,20 @@ export default function Home() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="h-screen flex"
+            className="h-screen flex relative"
           >
-            {/* Sidebar */}
-            <ChatSidebar
-              onNewChat={handleNewChat}
-              onToggle={handleToggleSidebar}
-              isOpen={sidebarOpen}
-            />
+            {/* Mobile sidebar overlay */}
+            {isMobile && sidebarOpen && (
+              <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={handleToggleSidebar} />
+            )}
+            {/* Sidebar - mobile: fixed overlay, desktop: inline */}
+            <div className={isMobile && sidebarOpen ? 'fixed inset-y-0 left-0 z-50' : ''}>
+              <ChatSidebar
+                onNewChat={handleNewChat}
+                onToggle={handleToggleSidebar}
+                isOpen={sidebarOpen}
+              />
+            </div>
 
             {/* Chat Area */}
             <ChatArea />

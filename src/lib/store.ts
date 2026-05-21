@@ -62,6 +62,8 @@ interface AppState {
   setSidebarOpen: (open: boolean) => void
   settingsTab: string
   setSettingsTab: (tab: string) => void
+  customInstructions: string
+  setCustomInstructions: (instructions: string) => void
 
   // Helpers
   getCurrentChat: () => Chat | undefined
@@ -117,6 +119,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   settingsTab: 'general',
   setSettingsTab: (tab) => set({ settingsTab: tab }),
+  customInstructions: '',
+  setCustomInstructions: (instructions) => set({ customInstructions: instructions }),
 
   // Helpers
   getCurrentChat: () => {
