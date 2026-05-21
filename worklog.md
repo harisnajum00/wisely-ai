@@ -103,3 +103,30 @@ Stage Summary:
 - GFM features working: tables, strikethrough, task lists
 - AI explicitly instructed to use GFM markdown tables
 - Build passes clean, API verified generating proper table markdown
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Switch AI backend from z-ai-web-dev-sdk to OpenRouter with streaming
+
+Work Log:
+- Installed @openrouter/sdk package
+- Added OPENROUTER_API_KEY to .env file
+- Completely rewrote /api/chat/route.ts to use OpenRouter SDK
+- Text chat: uses openai/gpt-oss-120b:free model with streaming (SSE)
+- Vision/image: uses google/gemini-2.0-flash-exp:free model (non-streaming)
+- Implemented Server-Sent Events (SSE) streaming format for text responses
+- Added proper error handling: 503 if API key missing, 500 for other errors
+- Rewrote ChatArea.tsx to handle streaming responses via SSE parser
+- Streaming: assistant message updates in real-time as tokens arrive
+- Vision responses: still returned as JSON (non-streaming)
+- Regenerate also supports streaming
+- Kept all brand identity rules in system prompt (Wisely, Haris Najum, etc.)
+- Kept GFM formatting instructions in system prompt
+
+Stage Summary:
+- AI backend switched from z-ai-web-dev-sdk to OpenRouter
+- Text chat streams in real-time (SSE) — much better UX
+- Vision uses Gemini 2.0 Flash (free) for image analysis
+- Needs OPENROUTER_API_KEY in .env to work
+- Build passes clean, error handling verified

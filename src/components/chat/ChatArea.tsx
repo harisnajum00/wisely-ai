@@ -29,6 +29,52 @@ export default function ChatArea() {
     scrollToBottom()
   }, [currentChat?.messages?.length, scrollToBottom])
 
+  /**
+   * Parse Server-Sent Events from a streaming response
+   */
+  async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+    const reader = stream.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+          const data = trimmed.slice(6) // Remove "data: "
+          if (data === '[DONE]') return
+
+          try {
+            const parsed = JSON.parse(data)
+            if (parsed.content) {
+              yield parsed.content
+            } else if (parsed.error) {
+              throw new Error(parsed.error)
+            }
+          } catch (e: any) {
+            // If it's our thrown error, re-throw it
+            if (e.message && !e.message.includes('JSON')) {
+              throw e
+            }
+            // Otherwise skip malformed JSON
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+  }
+
   const handleSend = useCallback(
     async (message: string, files?: File[], imageBase64?: string) => {
       let chatId = currentChatId
@@ -116,25 +162,49 @@ export default function ChatArea() {
           }),
         })
 
-        const data = await res.json()
-
         if (!res.ok) {
-          // Show the actual error from the API for better debugging
+          // Non-streaming error response (e.g., vision, or API key missing)
+          const data = await res.json().catch(() => ({}))
           const errorMsg = data?.error || 'Failed to get response from Wisely.'
           updateMessage(chatId, assistantMessageId, {
             content: errorMsg,
             isLoading: false,
           })
-        } else {
+          return
+        }
+
+        const contentType = res.headers.get('Content-Type') || ''
+
+        // Check if this is a streaming response
+        if (contentType.includes('text/event-stream') && res.body) {
+          // Streaming path — for text chat
+          let fullContent = ''
+
+          // Mark as no longer loading so the typing animation starts showing content
           updateMessage(chatId, assistantMessageId, {
-            content: data.message || 'I apologize, but I could not generate a response.',
+            content: '',
+            isLoading: false,
+          })
+
+          for await (const chunk of parseSSE(res.body)) {
+            fullContent += chunk
+            updateMessage(chatId, assistantMessageId, {
+              content: fullContent,
+              isLoading: false,
+            })
+          }
+        } else {
+          // Non-streaming path — for vision responses
+          const data = await res.json()
+          updateMessage(chatId, assistantMessageId, {
+            content: data.message || data.error || 'I apologize, but I could not generate a response.',
             isLoading: false,
           })
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Chat error:', error)
         updateMessage(chatId, assistantMessageId, {
-          content: 'Something went wrong. Please try again.',
+          content: error?.message || 'Something went wrong. Please try again.',
           isLoading: false,
         })
       }
@@ -153,15 +223,6 @@ export default function ChatArea() {
 
       const messageIndex = chat.messages.findIndex((m) => m.id === messageId)
       if (messageIndex === -1) return
-
-      // Find the last user message before this assistant message
-      let userMessageContent = ''
-      for (let i = messageIndex - 1; i >= 0; i--) {
-        if (chat.messages[i].role === 'user') {
-          userMessageContent = chat.messages[i].content
-          break
-        }
-      }
 
       // Set the message to loading state
       updateMessage(currentChatId, messageId, {
@@ -185,15 +246,37 @@ export default function ChatArea() {
         })
 
         if (!res.ok) {
-          throw new Error('Failed to get response')
+          const data = await res.json().catch(() => ({}))
+          updateMessage(currentChatId, messageId, {
+            content: data?.error || 'Failed to regenerate response.',
+            isLoading: false,
+          })
+          return
         }
 
-        const data = await res.json()
+        const contentType = res.headers.get('Content-Type') || ''
 
-        updateMessage(currentChatId, messageId, {
-          content: data.message || 'I apologize, but I could not generate a response.',
-          isLoading: false,
-        })
+        if (contentType.includes('text/event-stream') && res.body) {
+          let fullContent = ''
+          updateMessage(currentChatId, messageId, {
+            content: '',
+            isLoading: false,
+          })
+
+          for await (const chunk of parseSSE(res.body)) {
+            fullContent += chunk
+            updateMessage(currentChatId, messageId, {
+              content: fullContent,
+              isLoading: false,
+            })
+          }
+        } else {
+          const data = await res.json()
+          updateMessage(currentChatId, messageId, {
+            content: data.message || 'I apologize, but I could not generate a response.',
+            isLoading: false,
+          })
+        }
       } catch {
         updateMessage(currentChatId, messageId, {
           content: 'Something went wrong. Please try again.',

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
-import ZAI from "z-ai-web-dev-sdk"
+import { NextRequest } from "next/server"
+import { OpenRouter } from "@openrouter/sdk"
 
 const SYSTEM_PROMPT = `You are Wisely, a premium AI assistant created by Muhammad Haris Najum. You are intelligent, helpful, and conversational.
 
@@ -31,11 +31,21 @@ You are capable of:
 
 const VISION_SYSTEM_PROMPT = SYSTEM_PROMPT + `\n\nYou also have vision capabilities. When users share images, analyze and describe them thoroughly. If they ask about a product in an image, help them identify it, provide relevant information, and suggest where they might find it online at good prices. Be specific and helpful with product recommendations. Always present pricing/comparison data in proper markdown tables.`
 
+const CHAT_MODEL = "openai/gpt-oss-120b:free"
+const VISION_MODEL = "google/gemini-2.0-flash-exp:free"
+
+function getOpenRouterClient() {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured")
+  }
+  return new OpenRouter({ apiKey })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages, files, imageBase64 } = await request.json()
-
-    const zai = await ZAI.create()
+    const openrouter = getOpenRouterClient()
 
     const formattedMessages = [
       { role: "system" as const, content: SYSTEM_PROMPT },
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
       })),
     ]
 
-    // If there's an image, use VLM (createVision) for multimodal analysis
+    // If there's an image, use vision model with multimodal content
     if (imageBase64) {
       const lastUserMsg = formattedMessages[formattedMessages.length - 1]
       const userText = lastUserMsg?.content || "What do you see in this image?"
@@ -55,60 +65,109 @@ export async function POST(request: NextRequest) {
         ? imageBase64
         : `data:image/png;base64,${imageBase64}`
 
-      // Build the vision messages array
-      // System message as a text content, then user message with image
-      const vlmMessages = [
-        {
-          role: "system" as const,
-          content: VISION_SYSTEM_PROMPT,
-        },
+      const visionMessages = [
+        { role: "system" as const, content: VISION_SYSTEM_PROMPT },
         {
           role: "user" as const,
           content: [
-            {
-              type: "text" as const,
-              text: userText,
-            },
+            { type: "text" as const, text: userText },
             {
               type: "image_url" as const,
-              image_url: {
-                url: imageUrl,
-              },
+              imageUrl: { url: imageUrl },
             },
           ],
         },
       ]
 
-      const completion = await zai.chat.completions.createVision({
-        model: "glm-4.6v",
-        messages: vlmMessages,
-        thinking: { type: "disabled" },
+      const result = await openrouter.chat.send({
+        model: VISION_MODEL,
+        messages: visionMessages as any,
       })
 
-      const responseText =
-        completion.choices?.[0]?.message?.content ||
+      const { data: response, error } = result
+      if (error) {
+        console.error("Vision API error:", error)
+        return new Response(
+          JSON.stringify({ error: "Failed to analyze image. Please try again." }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        )
+      }
+
+      const message = (response as any)?.choices?.[0]?.message?.content ||
         "I couldn't analyze that image. Please try again."
 
-      return NextResponse.json({ message: responseText })
+      return new Response(
+        JSON.stringify({ message }),
+        { headers: { "Content-Type": "application/json" } }
+      )
     }
 
-    // Regular chat completion (no image)
-    const completion = await zai.chat.completions.create({
-      messages: formattedMessages,
-      temperature: 0.7,
-      max_tokens: 2048,
+    // Text chat with streaming
+    const encoder = new TextEncoder()
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const result = await openrouter.chat.send({
+            model: CHAT_MODEL,
+            messages: formattedMessages,
+            stream: true,
+          })
+
+          const { data: eventStream, error } = result
+
+          if (error) {
+            console.error("Chat API error:", error)
+            controller.error(new Error("Failed to get response"))
+            return
+          }
+
+          for await (const chunk of eventStream as AsyncIterable<any>) {
+            const content = chunk.choices?.[0]?.delta?.content
+            if (content) {
+              // Send as Server-Sent Events format
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+              )
+            }
+          }
+
+          // Send the [DONE] signal
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+          controller.close()
+        } catch (err: any) {
+          console.error("Streaming error:", err)
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ error: err.message || "Stream error" })}\n\n`
+            )
+          )
+          controller.close()
+        }
+      },
     })
 
-    const responseText =
-      completion.choices[0]?.message?.content ||
-      "I'm not sure how to respond to that. Could you try rephrasing?"
-
-    return NextResponse.json({ message: responseText })
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    })
   } catch (error: any) {
     console.error("Chat API error:", error?.message || error)
-    return NextResponse.json(
-      { error: "Something went wrong. Please try again." },
-      { status: 500 }
+
+    // Specific error for missing API key
+    if (error?.message?.includes("OPENROUTER_API_KEY")) {
+      return new Response(
+        JSON.stringify({ error: "AI service is not configured. Please add an OpenRouter API key." }),
+        { status: 503, headers: { "Content-Type": "application/json" } }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Something went wrong. Please try again." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
 }
