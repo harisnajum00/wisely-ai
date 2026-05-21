@@ -47,7 +47,11 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-const CHAT_MODEL = "openai/gpt-oss-120b:free"
+// Fast free models on OpenRouter
+// nvidia/nemotron-3-nano-30b-a3b:free — fastest (~550ms first token), non-reasoning, good quality
+// openai/gpt-oss-20b:free — reasoning model, ~1s first token, higher quality
+// openrouter/free — auto-routes to best available vision model
+const FAST_MODEL = "nvidia/nemotron-3-nano-30b-a3b:free"
 const VISION_MODEL = "openrouter/free"
 
 export async function POST(request: NextRequest) {
@@ -104,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Choose the right model
-    const model = hasImage ? VISION_MODEL : CHAT_MODEL
+    const model = hasImage ? VISION_MODEL : FAST_MODEL
 
     // Use OpenRouter REST API directly for maximum compatibility
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -142,6 +146,7 @@ export async function POST(request: NextRequest) {
     // Forward the streaming response from OpenRouter
     // OpenRouter returns SSE format compatible with OpenAI
     const encoder = new TextEncoder()
+    let hasSentContent = false
 
     const stream = new ReadableStream({
       async start(controller) {
@@ -172,6 +177,7 @@ export async function POST(request: NextRequest) {
                 const content = parsed.choices?.[0]?.delta?.content
 
                 if (content) {
+                  hasSentContent = true
                   controller.enqueue(
                     encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
                   )

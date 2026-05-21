@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
@@ -18,6 +18,9 @@ export default function ChatArea() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // Throttle streaming updates — batch tokens and flush every 60ms for smoother UI
+  const streamBufferRef = useRef<{ chatId: string; msgId: string; content: string } | null>(null)
+  const streamTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const currentChat = getCurrentChat()
 
@@ -28,6 +31,38 @@ export default function ChatArea() {
   useEffect(() => {
     scrollToBottom()
   }, [currentChat?.messages?.length, scrollToBottom])
+
+  // Flush the streaming buffer to the store (throttled)
+  const flushStreamBuffer = useCallback(() => {
+    if (streamBufferRef.current) {
+      const { chatId, msgId, content } = streamBufferRef.current
+      updateMessage(chatId, msgId, { content, isLoading: false })
+      streamBufferRef.current = null
+    }
+    streamTimerRef.current = null
+  }, [updateMessage])
+
+  // Buffered update — accumulates tokens and flushes every 60ms
+  const bufferedUpdate = useCallback(
+    (chatId: string, msgId: string, content: string) => {
+      streamBufferRef.current = { chatId, msgId, content }
+      if (!streamTimerRef.current) {
+        streamTimerRef.current = setTimeout(flushStreamBuffer, 60)
+      }
+    },
+    [flushStreamBuffer]
+  )
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (streamTimerRef.current) {
+        clearTimeout(streamTimerRef.current)
+        // Flush any remaining content
+        flushStreamBuffer()
+      }
+    }
+  }, [flushStreamBuffer])
 
   /**
    * Parse Server-Sent Events from a streaming response
@@ -187,11 +222,19 @@ export default function ChatArea() {
 
           for await (const chunk of parseSSE(res.body)) {
             fullContent += chunk
-            updateMessage(chatId, assistantMessageId, {
-              content: fullContent,
-              isLoading: false,
-            })
+            // Use buffered updates for smoother streaming (batches tokens, flushes every 60ms)
+            bufferedUpdate(chatId, assistantMessageId, fullContent)
           }
+
+          // Flush any remaining buffered content immediately
+          if (streamTimerRef.current) {
+            clearTimeout(streamTimerRef.current)
+            streamTimerRef.current = null
+          }
+          updateMessage(chatId, assistantMessageId, {
+            content: fullContent,
+            isLoading: false,
+          })
         } else {
           // Fallback for non-streaming error responses
           const data = await res.json().catch(() => ({}))
@@ -210,7 +253,7 @@ export default function ChatArea() {
 
       scrollToBottom()
     },
-    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom]
+    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, bufferedUpdate]
   )
 
   const handleRegenerate = useCallback(
@@ -264,11 +307,19 @@ export default function ChatArea() {
 
           for await (const chunk of parseSSE(res.body)) {
             fullContent += chunk
-            updateMessage(currentChatId, messageId, {
-              content: fullContent,
-              isLoading: false,
-            })
+            // Use buffered updates for smoother streaming
+            bufferedUpdate(currentChatId, messageId, fullContent)
           }
+
+          // Flush any remaining buffered content immediately
+          if (streamTimerRef.current) {
+            clearTimeout(streamTimerRef.current)
+            streamTimerRef.current = null
+          }
+          updateMessage(currentChatId, messageId, {
+            content: fullContent,
+            isLoading: false,
+          })
         } else {
           // Fallback for non-streaming error responses
           const data = await res.json().catch(() => ({}))
@@ -284,7 +335,7 @@ export default function ChatArea() {
         })
       }
     },
-    [currentChatId, updateMessage]
+    [currentChatId, updateMessage, bufferedUpdate]
   )
 
   return (
