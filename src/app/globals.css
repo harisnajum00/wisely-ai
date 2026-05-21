@@ -403,21 +403,66 @@
 .markdown-content h2 { font-size: 1.25rem; }
 .markdown-content h3 { font-size: 1.1rem; }
 
+/* Premium table styles for GFM tables */
 .markdown-content table {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
   margin: 0.75rem 0;
-}
-
-.markdown-content th, .markdown-content td {
+  border-radius: 0.75rem;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.5rem 0.75rem;
-  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.markdown-content th {
+.markdown-content thead {
   background: rgba(124, 58, 237, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.markdown-content thead th {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(167, 139, 250, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.markdown-content thead th:first-child {
+  border-top-left-radius: 0.75rem;
+}
+
+.markdown-content thead th:last-child {
+  border-top-right-radius: 0.75rem;
+}
+
+.markdown-content tbody tr {
+  transition: background 0.15s ease;
+}
+
+.markdown-content tbody tr:hover {
+  background: rgba(124, 58, 237, 0.04);
+}
+
+.markdown-content tbody tr:not(:last-child) td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.markdown-content td {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.markdown-content td:first-child {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .markdown-content blockquote {
@@ -425,6 +470,19 @@
   padding-left: 1rem;
   margin: 0.75rem 0;
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Strikethrough from GFM */
+.markdown-content del {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Task list checkboxes from GFM */
+.markdown-content input[type="checkbox"] {
+  accent-color: #8b5cf6;
+  margin-right: 0.5rem;
+  transform: scale(1.1);
 }
 
 /* Background mesh pattern */

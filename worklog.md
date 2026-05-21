@@ -74,3 +74,32 @@ Stage Summary:
 - VLM API verified working: responds correctly to image + question combinations
 - Error messages now more descriptive for debugging
 - Build passes clean
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Fix markdown table rendering and improve chat format
+
+Work Log:
+- Installed remark-gfm (GitHub Flavored Markdown) plugin for react-markdown
+- Updated MessageBubble to import and use remarkGfm as remarkPlugins
+- Added comprehensive custom component renderers for all GFM elements:
+  - table/thead/tbody/tr/th/td — Premium styled tables with violet header, hover rows, rounded corners
+  - h1/h2/h3 — Proper heading hierarchy with spacing
+  - ul/ol/li — Styled lists with proper indentation
+  - blockquote — Violet left border with italic text
+  - a — Violet links with hover states
+  - strong/em/del — Bold, emphasis, strikethrough (GFM)
+  - hr — Subtle divider
+- Rewrote CSS table styles: border-collapse:separate, rounded corners, violet header, row hover
+- Added CSS for GFM strikethrough (del) and task list checkboxes
+- Updated API system prompt with explicit GFM formatting rules and table example
+- Added instruction: "ALWAYS use proper markdown tables" for pricing/comparison data
+- Increased AI message max-width from 85% to 90% for better table readability
+- Tested: AI now generates proper |---| separator tables that render beautifully
+
+Stage Summary:
+- Tables now render as proper HTML with premium dark theme styling
+- GFM features working: tables, strikethrough, task lists
+- AI explicitly instructed to use GFM markdown tables
+- Build passes clean, API verified generating proper table markdown

@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Sparkles, Copy, Check, RefreshCw, User, ImageIcon } from 'lucide-react'
+import { Sparkles, Copy, Check, RefreshCw, User, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ChatMessage } from '@/lib/store'
 
@@ -96,7 +97,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
       {/* Message content */}
       <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
         <div
-          className={`inline-block max-w-[85%] rounded-2xl px-4 py-3 ${
+          className={`inline-block max-w-[90%] rounded-2xl px-4 py-3 ${
             isUser
               ? 'bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white rounded-tr-sm'
               : 'glass text-white/90 rounded-tl-sm'
@@ -125,7 +126,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   key={idx}
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-lg text-xs text-white/80"
                 >
-                  <ImageIcon className="size-3" />
+                  <FileText className="size-3" />
                   <span className="truncate max-w-[100px]">{file.name}</span>
                 </div>
               ))}
@@ -137,7 +138,64 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
           ) : (
             <div className="markdown-content text-sm">
               <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
+                  // --- Tables ---
+                  table({ children, ...props }) {
+                    return (
+                      <div className="my-3 overflow-x-auto -mx-1">
+                        <table
+                          className="w-full border-collapse text-sm rounded-xl overflow-hidden"
+                          {...props}
+                        >
+                          {children}
+                        </table>
+                      </div>
+                    )
+                  },
+                  thead({ children, ...props }) {
+                    return (
+                      <thead className="border-b border-white/10" {...props}>
+                        {children}
+                      </thead>
+                    )
+                  },
+                  tbody({ children, ...props }) {
+                    return (
+                      <tbody className="divide-y divide-white/5" {...props}>
+                        {children}
+                      </tbody>
+                    )
+                  },
+                  tr({ children, ...props }) {
+                    return (
+                      <tr className="hover:bg-white/[0.03] transition-colors" {...props}>
+                        {children}
+                      </tr>
+                    )
+                  },
+                  th({ children, ...props }) {
+                    return (
+                      <th
+                        className="px-4 py-2.5 text-left text-xs font-semibold text-violet-300/90 bg-violet-500/10 whitespace-nowrap"
+                        {...props}
+                      >
+                        {children}
+                      </th>
+                    )
+                  },
+                  td({ children, ...props }) {
+                    return (
+                      <td
+                        className="px-4 py-2.5 text-white/80 whitespace-nowrap"
+                        {...props}
+                      >
+                        {children}
+                      </td>
+                    )
+                  },
+
+                  // --- Code blocks ---
                   code({ className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '')
                     const codeString = String(children).replace(/\n$/, '')
@@ -188,6 +246,118 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                       <code className={className} {...props}>
                         {children}
                       </code>
+                    )
+                  },
+
+                  // --- Headings ---
+                  h1({ children, ...props }) {
+                    return (
+                      <h1 className="text-xl font-bold text-white mt-5 mb-3 first:mt-0" {...props}>
+                        {children}
+                      </h1>
+                    )
+                  },
+                  h2({ children, ...props }) {
+                    return (
+                      <h2 className="text-lg font-bold text-white mt-4 mb-2 first:mt-0" {...props}>
+                        {children}
+                      </h2>
+                    )
+                  },
+                  h3({ children, ...props }) {
+                    return (
+                      <h3 className="text-base font-semibold text-white mt-3 mb-2 first:mt-0" {...props}>
+                        {children}
+                      </h3>
+                    )
+                  },
+
+                  // --- Paragraphs ---
+                  p({ children, ...props }) {
+                    return (
+                      <p className="my-2 leading-relaxed first:mt-0 last:mb-0" {...props}>
+                        {children}
+                      </p>
+                    )
+                  },
+
+                  // --- Lists ---
+                  ul({ children, ...props }) {
+                    return (
+                      <ul className="my-2 ml-4 space-y-1 list-disc list-outside" {...props}>
+                        {children}
+                      </ul>
+                    )
+                  },
+                  ol({ children, ...props }) {
+                    return (
+                      <ol className="my-2 ml-4 space-y-1 list-decimal list-outside" {...props}>
+                        {children}
+                      </ol>
+                    )
+                  },
+                  li({ children, ...props }) {
+                    return (
+                      <li className="leading-relaxed text-white/85" {...props}>
+                        {children}
+                      </li>
+                    )
+                  },
+
+                  // --- Blockquotes ---
+                  blockquote({ children, ...props }) {
+                    return (
+                      <blockquote
+                        className="border-l-3 border-violet-500/50 pl-4 my-3 text-white/60 italic"
+                        {...props}
+                      >
+                        {children}
+                      </blockquote>
+                    )
+                  },
+
+                  // --- Horizontal rule ---
+                  hr({ ...props }) {
+                    return <hr className="my-4 border-white/10" {...props} />
+                  },
+
+                  // --- Links ---
+                  a({ href, children, ...props }) {
+                    return (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors"
+                        {...props}
+                      >
+                        {children}
+                      </a>
+                    )
+                  },
+
+                  // --- Strong & Emphasis ---
+                  strong({ children, ...props }) {
+                    return (
+                      <strong className="font-semibold text-white" {...props}>
+                        {children}
+                      </strong>
+                    )
+                  },
+                  em({ children, ...props }) {
+                    return (
+                      <em className="text-violet-200/90 italic" {...props}>
+                        {children}
+                      </em>
+                    )
+                  },
+
+                  // --- Delete (strikethrough from GFM) ---
+                  del({ children, ...props }) {
+                    return (
+                      <del className="line-through text-white/40" {...props}>
+                        {children}
+                      </del>
                     )
                   },
                 }}
