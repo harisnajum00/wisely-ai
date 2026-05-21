@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Sparkles, Copy, Check, RefreshCw, User } from 'lucide-react'
+import { Sparkles, Copy, Check, RefreshCw, User, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ChatMessage } from '@/lib/store'
 
@@ -30,6 +30,10 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
     }
   }
 
+  // Check if message has image attachments
+  const imageFiles = message.files?.filter(f => f.type.startsWith('image/')) || []
+  const docFiles = message.files?.filter(f => !f.type.startsWith('image/')) || []
+
   if (isLoading) {
     return (
       <motion.div
@@ -43,12 +47,12 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
         </div>
         <div className="flex-1 min-w-0">
           <div className="glass rounded-2xl rounded-tl-sm px-4 py-3 inline-block">
-            {message.files?.some(f => f.type.startsWith('image/')) ? (
+            {imageFiles.length > 0 ? (
               <div className="flex items-center gap-2 text-white/60 text-sm">
                 <Sparkles className="size-4 text-violet-400" />
                 <span>Analyzing image...</span>
               </div>
-            ) : message.files?.length ? (
+            ) : docFiles.length > 0 ? (
               <div className="flex items-center gap-2 text-white/60 text-sm">
                 <Sparkles className="size-4 text-violet-400" />
                 <span>Reading your file...</span>
@@ -98,6 +102,36 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
               : 'glass text-white/90 rounded-tl-sm'
           }`}
         >
+          {/* Show image attachments for user messages */}
+          {isUser && imageFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {imageFiles.map((file, idx) => (
+                <div key={idx} className="relative rounded-xl overflow-hidden">
+                  <img
+                    src={file.url}
+                    alt={file.name}
+                    className="max-w-[280px] max-h-[200px] object-contain rounded-xl"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Show document attachment indicators for user messages */}
+          {isUser && docFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {docFiles.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-lg text-xs text-white/80"
+                >
+                  <ImageIcon className="size-3" />
+                  <span className="truncate max-w-[100px]">{file.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {isUser ? (
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
           ) : (

@@ -38,19 +38,35 @@ export default function ChatArea() {
         chatId = createNewChat()
       }
 
+      // Build file attachments list including image if present
+      const allFiles = [
+        ...(files?.map((f) => ({
+          id: crypto.randomUUID(),
+          name: f.name,
+          type: f.type,
+          url: URL.createObjectURL(f),
+          size: f.size,
+        })) || []),
+      ]
+
+      // If there's a pasted/uploaded image, add it to the user's message attachments
+      if (imageBase64) {
+        allFiles.push({
+          id: crypto.randomUUID(),
+          name: 'pasted-image.png',
+          type: 'image/png',
+          url: imageBase64,
+          size: 0,
+        })
+      }
+
       // Add user message
       const userMessageId = crypto.randomUUID()
       const userMessage = {
         id: userMessageId,
         role: 'user' as const,
         content: message,
-        files: files?.map((f) => ({
-          id: crypto.randomUUID(),
-          name: f.name,
-          type: f.type,
-          url: URL.createObjectURL(f),
-          size: f.size,
-        })),
+        files: allFiles.length > 0 ? allFiles : undefined,
         isLoading: false,
         createdAt: new Date(),
       }
@@ -69,17 +85,6 @@ export default function ChatArea() {
         id: assistantMessageId,
         role: 'assistant' as const,
         content: '',
-        files: imageBase64
-          ? [
-              {
-                id: crypto.randomUUID(),
-                name: 'image',
-                type: 'image/png',
-                url: imageBase64,
-                size: 0,
-              },
-            ]
-          : undefined,
         isLoading: true,
         createdAt: new Date(),
       }

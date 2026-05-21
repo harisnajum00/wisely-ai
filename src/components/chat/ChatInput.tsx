@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { Paperclip, ImageIcon, Mic, Send, X } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Paperclip, ImageIcon, Mic, Send, X, ClipboardPaste, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 
@@ -15,10 +15,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [files, setFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<{ name: string; base64: string }[]>([])
   const [isFocused, setIsFocused] = useState(false)
+  const [pasteFlash, setPasteFlash] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const autoResize = useCallback(() => {
     const textarea = textareaRef.current
@@ -81,13 +84,182 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const addImageFromBlob = useCallback((blob: Blob, name?: string) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setImagePreviews((prev) => {
+        // Limit to 1 image at a time for API compatibility
+        return [{ name: name || 'pasted-image.png', base64 }]
+      })
+    }
+    reader.readAsDataURL(blob)
+  }, [])
+
+  // Handle paste events for clipboard images
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+
+      // Check if the pasted item is an image
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+
+        const blob = item.getAsFile()
+        if (!blob) continue
+
+        // Determine file extension from MIME type
+        const mimeToExt: Record<string, string> = {
+          'image/png': 'png',
+          'image/jpeg': 'jpg',
+          'image/gif': 'gif',
+          'image/webp': 'webp',
+          'image/svg+xml': 'svg',
+          'image/bmp': 'bmp',
+        }
+        const ext = mimeToExt[item.type] || 'png'
+        const fileName = `pasted-image.${ext}`
+
+        addImageFromBlob(blob, fileName)
+
+        // Flash effect to show the paste was received
+        setPasteFlash(true)
+        setTimeout(() => setPasteFlash(false), 600)
+
+        break // Only handle the first image
+      }
+    }
+  }, [addImageFromBlob])
+
+  // Global paste listener — works even when textarea isn't focused
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.startsWith('image/')) {
+          e.preventDefault()
+
+          const blob = item.getAsFile()
+          if (!blob) continue
+
+          const mimeToExt: Record<string, string> = {
+            'image/png': 'png',
+            'image/jpeg': 'jpg',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/svg+xml': 'svg',
+            'image/bmp': 'bmp',
+          }
+          const ext = mimeToExt[item.type] || 'png'
+          const fileName = `pasted-image.${ext}`
+
+          addImageFromBlob(blob, fileName)
+
+          setPasteFlash(true)
+          setTimeout(() => setPasteFlash(false), 600)
+
+          // Focus the textarea after pasting
+          textareaRef.current?.focus()
+          break
+        }
+      }
+    }
+
+    window.addEventListener('paste', handleGlobalPaste)
+    return () => window.removeEventListener('paste', handleGlobalPaste)
+  }, [addImageFromBlob])
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set to false if we're actually leaving the container
+    if (containerRef.current && !containerRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    if (droppedFiles.length === 0) return
+
+    // Separate images from other files
+    const imageFiles = droppedFiles.filter(f => f.type.startsWith('image/'))
+    const otherFiles = droppedFiles.filter(f => !f.type.startsWith('image/'))
+
+    // Add non-image files
+    if (otherFiles.length > 0) {
+      setFiles((prev) => [...prev, ...otherFiles])
+    }
+
+    // Convert and add image files
+    imageFiles.forEach((file) => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string
+        setImagePreviews((prev) => {
+          if (prev.length === 0) {
+            return [{ name: file.name, base64 }]
+          }
+          // Replace existing image (1 at a time)
+          return [{ name: file.name, base64 }]
+        })
+      }
+      reader.readAsDataURL(file)
+    })
+
+    // Flash effect
+    setPasteFlash(true)
+    setTimeout(() => setPasteFlash(false), 600)
+
+    // Focus textarea
+    textareaRef.current?.focus()
+  }, [])
+
   const canSend = message.trim() || files.length > 0 || imagePreviews.length > 0
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 pb-4 pt-2">
-      {/* File previews */}
+    <div
+      ref={containerRef}
+      className="w-full max-w-4xl mx-auto px-4 pb-4 pt-2 relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#0c0c14]/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-violet-500/50 animate-scale-in">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center animate-float">
+              <Upload className="size-8 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-medium text-base">Drop your image here</p>
+              <p className="text-white/40 text-sm mt-1">Images will be analyzed by Wisely</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File & Image previews */}
       {(files.length > 0 || imagePreviews.length > 0) && (
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-3 animate-scale-in">
           {files.map((file, index) => (
             <div
               key={`file-${index}`}
@@ -106,21 +278,37 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           {imagePreviews.map((img, index) => (
             <div
               key={`img-${index}`}
-              className="relative group glass rounded-lg overflow-hidden"
+              className="relative group glass rounded-xl overflow-hidden"
             >
               <img
                 src={img.base64}
                 alt={img.name}
-                className="w-16 h-16 object-cover"
+                className="w-20 h-20 object-cover rounded-xl"
               />
-              <button
-                onClick={() => removeImage(index)}
-                className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white/60 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
-              >
-                <X className="size-3" />
-              </button>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 rounded-xl flex items-center justify-center">
+                <button
+                  onClick={() => removeImage(index)}
+                  className="p-1.5 bg-black/60 rounded-full text-white/80 hover:text-white transition-colors opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                  style={{ transition: 'opacity 0.2s, transform 0.2s' }}
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+              <div className="absolute bottom-1 left-1 right-1 text-center">
+                <span className="text-[9px] text-white/50 bg-black/40 px-1.5 py-0.5 rounded-md truncate block">
+                  {img.name}
+                </span>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Paste flash indicator */}
+      {pasteFlash && (
+        <div className="mb-2 flex items-center gap-2 text-violet-400 text-xs animate-message-in">
+          <ClipboardPaste className="size-3.5" />
+          <span>Image added from clipboard</span>
         </div>
       )}
 
@@ -128,6 +316,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       <div
         className={`relative flex items-end gap-2 glass rounded-2xl p-2 transition-all duration-300 ${
           isFocused ? 'glow-border input-glow' : ''
+        } ${pasteFlash ? 'ring-1 ring-violet-500/40' : ''} ${
+          isDragOver ? 'ring-2 ring-violet-500/50 border-violet-500/30' : ''
         }`}
       >
         {/* Attachment buttons */}
@@ -140,16 +330,22 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             multiple
             accept=".pdf,.doc,.docx,.txt,.csv,.json,.md,.py,.js,.ts,.tsx,.jsx,.html,.css"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
-            title="Attach file"
-          >
-            <Paperclip className="size-4.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled}
+              >
+                <Paperclip className="size-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
+              Attach file
+            </TooltipContent>
+          </Tooltip>
 
           <input
             type="file"
@@ -158,16 +354,22 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             className="hidden"
             accept="image/*"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={disabled}
-            title="Upload image"
-          >
-            <ImageIcon className="size-4.5" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-white/30 hover:text-white/60 hover:bg-white/5 rounded-xl shrink-0"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={disabled}
+              >
+                <ImageIcon className="size-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
+              Upload image
+            </TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -181,7 +383,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-[#16162a] text-white/70 border-white/10">
-              Coming soon
+              Voice input (coming soon)
             </TooltipContent>
           </Tooltip>
         </div>
@@ -195,9 +397,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             autoResize()
           }}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Ask Wisely anything..."
+          placeholder="Ask Wisely anything... (paste images with Ctrl+V)"
           disabled={disabled}
           rows={1}
           className="flex-1 bg-transparent text-white text-sm placeholder:text-white/25 resize-none outline-none py-2.5 px-1 max-h-[144px] min-h-[36px] leading-relaxed"
@@ -218,7 +421,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       </div>
 
       <p className="text-center text-[11px] text-white/15 mt-2">
-        Wisely can make mistakes. Consider checking important information.
+        Wisely can make mistakes. Consider checking important information. Paste or drop images directly.
       </p>
     </div>
   )
