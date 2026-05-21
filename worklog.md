@@ -111,22 +111,26 @@ Task: Switch AI backend from z-ai-web-dev-sdk to OpenRouter with streaming
 
 Work Log:
 - Installed @openrouter/sdk package
-- Added OPENROUTER_API_KEY to .env file
-- Completely rewrote /api/chat/route.ts to use OpenRouter SDK
+- Added OPENROUTER_API_KEY to .env file (user-provided key)
+- Completely rewrote /api/chat/route.ts to use OpenRouter REST API directly (via fetch)
 - Text chat: uses openai/gpt-oss-120b:free model with streaming (SSE)
-- Vision/image: uses google/gemini-2.0-flash-exp:free model (non-streaming)
-- Implemented Server-Sent Events (SSE) streaming format for text responses
-- Added proper error handling: 503 if API key missing, 500 for other errors
-- Rewrote ChatArea.tsx to handle streaming responses via SSE parser
-- Streaming: assistant message updates in real-time as tokens arrive
-- Vision responses: still returned as JSON (non-streaming)
+- Vision/image: uses openrouter/free model (routes to nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free)
+- Implemented Server-Sent Events (SSE) streaming format for BOTH text and vision responses
+- Added proper error handling: 503 if API key missing, forwards provider errors, 500 for other errors
+- Updated ChatArea.tsx to handle streaming for both text and vision (all responses now stream)
 - Regenerate also supports streaming
 - Kept all brand identity rules in system prompt (Wisely, Haris Najum, etc.)
 - Kept GFM formatting instructions in system prompt
+- Fixed double [DONE] signal issue
+- Tested text chat: works perfectly with streaming, identifies as "Wisely"
+- Tested vision: works perfectly, correctly describes image content
+- Note: Google models (Gemma, Gemini) are region-restricted and don't work from Pakistan
+- Note: openrouter/free auto-routes to best available model including vision support
 
 Stage Summary:
-- AI backend switched from z-ai-web-dev-sdk to OpenRouter
-- Text chat streams in real-time (SSE) — much better UX
-- Vision uses Gemini 2.0 Flash (free) for image analysis
-- Needs OPENROUTER_API_KEY in .env to work
-- Build passes clean, error handling verified
+- AI backend fully switched from z-ai-web-dev-sdk to OpenRouter
+- Text chat streams in real-time (SSE) with openai/gpt-oss-120b:free
+- Vision also streams in real-time with openrouter/free (auto-routes to vision-capable model)
+- Both text and vision verified working end-to-end
+- Brand identity preserved: "Wisely" never reveals backend models
+- Build passes clean

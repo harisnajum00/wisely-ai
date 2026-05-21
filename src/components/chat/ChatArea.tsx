@@ -175,9 +175,8 @@ export default function ChatArea() {
 
         const contentType = res.headers.get('Content-Type') || ''
 
-        // Check if this is a streaming response
+        // All responses now stream (text + vision)
         if (contentType.includes('text/event-stream') && res.body) {
-          // Streaming path — for text chat
           let fullContent = ''
 
           // Mark as no longer loading so the typing animation starts showing content
@@ -194,10 +193,10 @@ export default function ChatArea() {
             })
           }
         } else {
-          // Non-streaming path — for vision responses
-          const data = await res.json()
+          // Fallback for non-streaming error responses
+          const data = await res.json().catch(() => ({}))
           updateMessage(chatId, assistantMessageId, {
-            content: data.message || data.error || 'I apologize, but I could not generate a response.',
+            content: data?.error || data?.message || 'I apologize, but I could not generate a response.',
             isLoading: false,
           })
         }
@@ -271,9 +270,10 @@ export default function ChatArea() {
             })
           }
         } else {
-          const data = await res.json()
+          // Fallback for non-streaming error responses
+          const data = await res.json().catch(() => ({}))
           updateMessage(currentChatId, messageId, {
-            content: data.message || 'I apologize, but I could not generate a response.',
+            content: data?.error || data?.message || 'I apologize, but I could not generate a response.',
             isLoading: false,
           })
         }

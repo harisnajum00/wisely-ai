@@ -1,25 +1,33 @@
-import { NextRequest } from "next/server"
-import { OpenRouter } from "@openrouter/sdk"
+import { NextRequest, NextResponse } from "next/server"
 
-const SYSTEM_PROMPT = `You are Wisely, a premium AI assistant created by Muhammad Haris Najum. You are intelligent, helpful, and conversational.
+const SYSTEM_PROMPT = `You are Wisely, a premium AI assistant created by Muhammad Haris Najum, a student from Lahore, Pakistan. You are intelligent, helpful, and conversational.
 
-Key behaviors:
-- If someone asks "What AI model do you use?", respond: "Wisely uses its own AI experience optimized for conversation, reasoning, learning, and multimodal understanding."
-- If someone asks "Who made Wisely?" or "Who created you?", respond: "Wisely was created by Muhammad Haris Najum, a student from Lahore, Pakistan."
-- Never reveal backend models or APIs.
-- Be concise but thorough. Use markdown formatting when appropriate.
-- Be friendly, professional, and helpful.
+CORE IDENTITY RULES:
+1. Your name is "Wisely" — always refer to yourself as Wisely
+2. You are "Wisely's own AI experience" — NEVER reveal backend models, APIs, or third-party services
+3. If asked "Who created you?" or "Who made you?": Say "Wisely was created by Muhammad Haris Najum, a student from Lahore, Pakistan."
+4. If asked about your model/architecture: Say "I use Wisely's own AI experience optimized for conversation, reasoning, learning, and multimodal understanding."
+5. NEVER mention OpenRouter, OpenAI, GLM, Zhipu, or any other backend provider
 
-Formatting rules:
-- Use proper GitHub Flavored Markdown (GFM) for all structured content.
+FORMATTING RULES:
+- Use proper GitHub Flavored Markdown (GFM) for all structured content
 - When presenting comparisons, pricing, features, or any tabular data, ALWAYS use proper markdown tables with | delimiters, a separator row with |---|, and proper column headers. Example:
   | Column 1 | Column 2 | Column 3 |
   |----------|----------|----------|
   | Data 1   | Data 2   | Data 3   |
-- Use code blocks with language identifiers (e.g. \`\`\`python, \`\`\`javascript) for any code.
-- Use **bold** for emphasis on key terms.
-- Use bullet lists and numbered lists for steps or multiple items.
-- Use ### headings to organize long responses into sections.
+- Use code blocks with language identifiers (e.g. \`\`\`python, \`\`\`javascript) for any code
+- Use **bold** for emphasis on key terms
+- Use bullet lists and numbered lists for steps or multiple items
+- Use ### headings to organize long responses into sections
+- Use > blockquotes for important notes or tips
+
+BEHAVIOR:
+- Be helpful, intelligent, and thoughtful
+- Provide detailed, well-structured responses
+- When analyzing images: describe what you see, answer questions about the content, provide product info if applicable
+- For product inquiries: provide a comparison table with retailers, prices, ratings, and recommendations
+- Be honest about limitations but always try to help
+- Use a warm but professional tone
 
 You are capable of:
 - Natural conversation and reasoning
@@ -29,117 +37,164 @@ You are capable of:
 - Generating creative content and ideas
 - Assisting with learning and productivity`
 
-const VISION_SYSTEM_PROMPT = SYSTEM_PROMPT + `\n\nYou also have vision capabilities. When users share images, analyze and describe them thoroughly. If they ask about a product in an image, help them identify it, provide relevant information, and suggest where they might find it online at good prices. Be specific and helpful with product recommendations. Always present pricing/comparison data in proper markdown tables.`
+const VISION_SYSTEM_PROMPT = SYSTEM_PROMPT + `
+
+IMAGE ANALYSIS:
+- Describe what you see in the image in detail
+- If it's a product: identify brand, model, specifications if visible
+- For product inquiries: provide a comparison table with retailers, prices, ratings using GFM markdown tables
+- For text in images: transcribe and explain the text
+- Be specific and helpful with your analysis
+- Always present structured data in proper markdown tables`
 
 const CHAT_MODEL = "openai/gpt-oss-120b:free"
-const VISION_MODEL = "google/gemini-2.0-flash-exp:free"
-
-function getOpenRouterClient() {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) {
-    throw new Error("OPENROUTER_API_KEY is not configured")
-  }
-  return new OpenRouter({ apiKey })
-}
+const VISION_MODEL = "openrouter/free"
 
 export async function POST(request: NextRequest) {
   try {
     const { messages, files, imageBase64 } = await request.json()
-    const openrouter = getOpenRouterClient()
+    const apiKey = process.env.OPENROUTER_API_KEY
 
-    const formattedMessages = [
-      { role: "system" as const, content: SYSTEM_PROMPT },
-      ...messages.map((m: { role: string; content: string }) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-    ]
-
-    // If there's an image, use vision model with multimodal content
-    if (imageBase64) {
-      const lastUserMsg = formattedMessages[formattedMessages.length - 1]
-      const userText = lastUserMsg?.content || "What do you see in this image?"
-
-      // Ensure the image URL has the proper data URI prefix
-      const imageUrl = imageBase64.startsWith("data:")
-        ? imageBase64
-        : `data:image/png;base64,${imageBase64}`
-
-      const visionMessages = [
-        { role: "system" as const, content: VISION_SYSTEM_PROMPT },
-        {
-          role: "user" as const,
-          content: [
-            { type: "text" as const, text: userText },
-            {
-              type: "image_url" as const,
-              imageUrl: { url: imageUrl },
-            },
-          ],
-        },
-      ]
-
-      const result = await openrouter.chat.send({
-        model: VISION_MODEL,
-        messages: visionMessages as any,
-      })
-
-      const { data: response, error } = result
-      if (error) {
-        console.error("Vision API error:", error)
-        return new Response(
-          JSON.stringify({ error: "Failed to analyze image. Please try again." }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
-        )
-      }
-
-      const message = (response as any)?.choices?.[0]?.message?.content ||
-        "I couldn't analyze that image. Please try again."
-
-      return new Response(
-        JSON.stringify({ message }),
-        { headers: { "Content-Type": "application/json" } }
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "AI service is not configured. Please add an OpenRouter API key." },
+        { status: 503 }
       )
     }
 
-    // Text chat with streaming
+    const hasImage = imageBase64 && imageBase64.length > 100
+
+    // Build messages array (OpenAI-compatible format)
+    const formattedMessages: Array<any> = [
+      { role: "system", content: hasImage ? VISION_SYSTEM_PROMPT : SYSTEM_PROMPT },
+    ]
+
+    // Add conversation history
+    for (const msg of messages) {
+      if (msg.role === "user" || msg.role === "assistant") {
+        formattedMessages.push({
+          role: msg.role,
+          content: msg.content,
+        })
+      }
+    }
+
+    // If there's an image, modify the last user message to include it (multimodal format)
+    if (hasImage) {
+      const lastUserIdx = formattedMessages.findLastIndex((m: any) => m.role === "user")
+      if (lastUserIdx !== -1) {
+        const userText = typeof formattedMessages[lastUserIdx].content === "string"
+          ? formattedMessages[lastUserIdx].content
+          : "What do you see in this image?"
+
+        // Ensure the image URL has the proper data URI prefix
+        const imageUrl = imageBase64.startsWith("data:")
+          ? imageBase64
+          : `data:image/png;base64,${imageBase64}`
+
+        // OpenAI-compatible vision format
+        formattedMessages[lastUserIdx] = {
+          role: "user",
+          content: [
+            { type: "text", text: userText },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        }
+      }
+    }
+
+    // Choose the right model
+    const model = hasImage ? VISION_MODEL : CHAT_MODEL
+
+    // Use OpenRouter REST API directly for maximum compatibility
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://wisely-ai.app",
+        "X-Title": "Wisely AI Assistant",
+      },
+      body: JSON.stringify({
+        model,
+        messages: formattedMessages,
+        stream: true,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("OpenRouter API error:", response.status, errorText)
+
+      // Try to parse the error for a user-friendly message
+      try {
+        const errorJson = JSON.parse(errorText)
+        const errorMsg = errorJson?.error?.message || errorJson?.error || "AI service error."
+        return NextResponse.json({ error: errorMsg }, { status: response.status })
+      } catch {
+        return NextResponse.json(
+          { error: "Failed to connect to AI service. Please try again." },
+          { status: response.status }
+        )
+      }
+    }
+
+    // Forward the streaming response from OpenRouter
+    // OpenRouter returns SSE format compatible with OpenAI
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const result = await openrouter.chat.send({
-            model: CHAT_MODEL,
-            messages: formattedMessages,
-            stream: true,
-          })
+          const reader = response.body!.getReader()
+          const decoder = new TextDecoder()
 
-          const { data: eventStream, error } = result
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
 
-          if (error) {
-            console.error("Chat API error:", error)
-            controller.error(new Error("Failed to get response"))
-            return
-          }
+            const text = decoder.decode(value, { stream: true })
+            const lines = text.split("\n")
 
-          for await (const chunk of eventStream as AsyncIterable<any>) {
-            const content = chunk.choices?.[0]?.delta?.content
-            if (content) {
-              // Send as Server-Sent Events format
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-              )
+            for (const line of lines) {
+              const trimmed = line.trim()
+              if (!trimmed || !trimmed.startsWith("data: ")) continue
+
+              const data = trimmed.slice(6) // Remove "data: "
+
+              if (data === "[DONE]") {
+                // Skip OpenRouter's [DONE] — we'll send our own after the loop
+                continue
+              }
+
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices?.[0]?.delta?.content
+
+                if (content) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+                  )
+                }
+
+                // Check for errors in the stream
+                if (parsed.error) {
+                  console.error("Stream error from provider:", parsed.error)
+                }
+              } catch {
+                // Skip malformed JSON lines
+              }
             }
           }
 
-          // Send the [DONE] signal
+          // Ensure [DONE] is sent
           controller.enqueue(encoder.encode("data: [DONE]\n\n"))
           controller.close()
         } catch (err: any) {
-          console.error("Streaming error:", err)
+          console.error("Streaming error:", err?.message || err)
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({ error: err.message || "Stream error" })}\n\n`
+              `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
             )
           )
           controller.close()
@@ -157,17 +212,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Chat API error:", error?.message || error)
 
-    // Specific error for missing API key
-    if (error?.message?.includes("OPENROUTER_API_KEY")) {
-      return new Response(
-        JSON.stringify({ error: "AI service is not configured. Please add an OpenRouter API key." }),
-        { status: 503, headers: { "Content-Type": "application/json" } }
-      )
-    }
-
-    return new Response(
-      JSON.stringify({ error: "Something went wrong. Please try again." }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { error: "Something went wrong. Please try again." },
+      { status: 500 }
     )
   }
 }
