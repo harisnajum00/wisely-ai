@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Wisely by Haris — Ask anything. Understand everything.",
   description:
     "Your AI assistant for conversation, files, images, learning, and creativity.",
+  verification: {
+    google: "qIZLfyTce8ueGCz6WwEpyxgRoURyqhK-e0GEBz09NXA",
+  },
   keywords: [
     "AI assistant",
     "Wisely",
