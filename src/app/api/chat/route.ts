@@ -43,8 +43,8 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// Fast free models on OpenRouter
-const FAST_MODEL = "nvidia/nemotron-3-nano-30b-a3b:free"
+// Models on OpenRouter
+const FAST_MODEL = "openai/gpt-oss-120b:free"
 const VISION_MODELS = [
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
   "google/gemma-4-31b-it:free",
