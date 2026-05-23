@@ -98,11 +98,17 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   // Navigation
   currentView: 'landing',
-  setCurrentView: (view) => set({ currentView: view }),
+  setCurrentView: (view) => {
+    saveToStorage('wisely-current-view', view)
+    set({ currentView: view })
+  },
 
   // Auth
   user: null,
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setUser: (user) => {
+    saveToStorage('wisely-user', user)
+    set({ user, isAuthenticated: !!user })
+  },
   authMode: 'login',
   setAuthMode: (mode) => set({ authMode: mode }),
   isAuthenticated: false,
@@ -110,34 +116,53 @@ export const useAppStore = create<AppState>((set, get) => ({
   // Chat
   chats: [],
   currentChatId: null,
-  setCurrentChatId: (id) => set({ currentChatId: id }),
-  addChat: (chat) => set((state) => ({ chats: [chat, ...state.chats] })),
+  setCurrentChatId: (id) => {
+    saveToStorage('wisely-current-chat-id', id)
+    set({ currentChatId: id })
+  },
+  addChat: (chat) => {
+    set((state) => {
+      const chats = [chat, ...state.chats]
+      saveToStorage('wisely-chats', chats)
+      return { chats }
+    })
+  },
   updateChat: (id, updates) =>
-    set((state) => ({
-      chats: state.chats.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-    })),
+    set((state) => {
+      const chats = state.chats.map((c) => (c.id === id ? { ...c, ...updates } : c))
+      saveToStorage('wisely-chats', chats)
+      return { chats }
+    }),
   deleteChat: (id) =>
-    set((state) => ({
-      chats: state.chats.filter((c) => c.id !== id),
-      currentChatId: state.currentChatId === id ? null : state.currentChatId,
-    })),
+    set((state) => {
+      const chats = state.chats.filter((c) => c.id !== id)
+      saveToStorage('wisely-chats', chats)
+      return {
+        chats,
+        currentChatId: state.currentChatId === id ? null : state.currentChatId,
+      }
+    }),
   addMessage: (chatId, message) =>
-    set((state) => ({
-      chats: state.chats.map((c) =>
+    set((state) => {
+      const chats = state.chats.map((c) =>
         c.id === chatId ? { ...c, messages: [...c.messages, message], updatedAt: new Date() } : c
-      ),
-    })),
+      )
+      saveToStorage('wisely-chats', chats)
+      return { chats }
+    }),
   updateMessage: (chatId, messageId, updates) =>
-    set((state) => ({
-      chats: state.chats.map((c) =>
+    set((state) => {
+      const chats = state.chats.map((c) =>
         c.id === chatId
           ? {
               ...c,
               messages: c.messages.map((m) => (m.id === messageId ? { ...m, ...updates } : m)),
             }
           : c
-      ),
-    })),
+      )
+      saveToStorage('wisely-chats', chats)
+      return { chats }
+    }),
 
   // UI
   sidebarOpen: true,
@@ -160,7 +185,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const customInstructions = loadFromStorage<string>('wisely-custom-instructions', '')
     const themeRaw = loadFromStorage<string>('wisely-theme', 'dark')
     const isDarkMode = themeRaw !== 'light'
-    set({ customInstructions, isDarkMode })
+    const chats = loadFromStorage<Chat[]>('wisely-chats', [])
+    const currentChatId = loadFromStorage<string | null>('wisely-current-chat-id', null)
+    const currentView = loadFromStorage<AppView>('wisely-current-view', 'landing')
+    const savedUser = loadFromStorage<User | null>('wisely-user', null)
+    set({
+      customInstructions,
+      isDarkMode,
+      chats,
+      currentChatId,
+      currentView: currentView === 'auth' ? 'landing' : currentView,
+      user: savedUser,
+      isAuthenticated: !!savedUser,
+    })
   },
 
   // Helpers
@@ -177,10 +214,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       createdAt: new Date(),
       updatedAt: new Date(),
     }
-    set((state) => ({
-      chats: [chat, ...state.chats],
-      currentChatId: id,
-    }))
+    set((state) => {
+      const chats = [chat, ...state.chats]
+      saveToStorage('wisely-chats', chats)
+      saveToStorage('wisely-current-chat-id', id)
+      return { chats, currentChatId: id }
+    })
     return id
   },
 }))

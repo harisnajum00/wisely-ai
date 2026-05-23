@@ -1,6 +1,5 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import GoogleProvider from "next-auth/providers/google"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 
@@ -37,10 +36,6 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
         }
       },
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "demo-client-id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "demo-client-secret",
     }),
   ],
   session: {

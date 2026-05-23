@@ -44,11 +44,13 @@ IMAGE ANALYSIS:
 - Always present structured data in proper markdown tables`
 
 // Fast free models on OpenRouter
-// nvidia/nemotron-3-nano-30b-a3b:free — fastest (~550ms first token), non-reasoning, good quality
-// openai/gpt-oss-20b:free — reasoning model, ~1s first token, higher quality
-// openrouter/free — auto-routes to best available vision model
 const FAST_MODEL = "nvidia/nemotron-3-nano-30b-a3b:free"
-const VISION_MODEL = "openrouter/free"
+const VISION_MODELS = [
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+  "google/gemma-4-31b-it:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "nvidia/nemotron-nano-12b-v2-vl:free",
+]
 
 export async function POST(request: NextRequest) {
   try {
@@ -109,120 +111,157 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Choose the right model
-    const model = hasImage ? VISION_MODEL : FAST_MODEL
-
-    // Use OpenRouter REST API directly for maximum compatibility
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://wisely-ai.app",
-        "X-Title": "Wisely AI Assistant",
-      },
-      body: JSON.stringify({
-        model,
-        messages: formattedMessages,
-        stream: true,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("OpenRouter API error:", response.status, errorText)
-
-      // Try to parse the error for a user-friendly message
-      try {
-        const errorJson = JSON.parse(errorText)
-        const errorMsg = errorJson?.error?.message || errorJson?.error || "AI service error."
-        return NextResponse.json({ error: errorMsg }, { status: response.status })
-      } catch {
-        return NextResponse.json(
-          { error: "Failed to connect to AI service. Please try again." },
-          { status: response.status }
-        )
-      }
-    }
-
-    // Forward the streaming response from OpenRouter
-    // OpenRouter returns SSE format compatible with OpenAI
-    const encoder = new TextEncoder()
-    let hasSentContent = false
-
-    const stream = new ReadableStream({
-      async start(controller) {
+    // Choose the right model and make the API call
+    if (hasImage) {
+      // Try vision models with fallback — free models can be rate-limited
+      let lastError: string = ""
+      for (const model of VISION_MODELS) {
         try {
-          const reader = response.body!.getReader()
-          const decoder = new TextDecoder()
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://wisely-ai.app",
+              "X-Title": "Wisely AI Assistant",
+            },
+            body: JSON.stringify({
+              model,
+              messages: formattedMessages,
+              stream: true,
+            }),
+          })
 
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            const text = decoder.decode(value, { stream: true })
-            const lines = text.split("\n")
-
-            for (const line of lines) {
-              const trimmed = line.trim()
-              if (!trimmed || !trimmed.startsWith("data: ")) continue
-
-              const data = trimmed.slice(6) // Remove "data: "
-
-              if (data === "[DONE]") {
-                // Skip OpenRouter's [DONE] — we'll send our own after the loop
-                continue
-              }
-
-              try {
-                const parsed = JSON.parse(data)
-                const content = parsed.choices?.[0]?.delta?.content
-
-                if (content) {
-                  hasSentContent = true
-                  controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
-                  )
-                }
-
-                // Check for errors in the stream
-                if (parsed.error) {
-                  console.error("Stream error from provider:", parsed.error)
-                }
-              } catch {
-                // Skip malformed JSON lines
-              }
+          if (!response.ok) {
+            const errorText = await response.text()
+            try {
+              const errorJson = JSON.parse(errorText)
+              lastError = errorJson?.error?.message || `Model ${model} error`
+            } catch {
+              lastError = `Model ${model} returned ${response.status}`
             }
+            console.log(`Vision model ${model} failed: ${lastError}`)
+            continue // Try next model
           }
 
-          // Ensure [DONE] is sent
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-          controller.close()
-        } catch (err: any) {
-          console.error("Streaming error:", err?.message || err)
-          controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
-            )
-          )
-          controller.close()
+          // This model worked — stream the response
+          return streamResponse(response)
+        } catch (e: any) {
+          lastError = e?.message || "Vision model unavailable"
+          console.log(`Vision model ${model} exception: ${lastError}`)
+          continue
         }
-      },
-    })
+      }
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    })
+      // All vision models failed
+      return NextResponse.json(
+        { error: `Image analysis is temporarily unavailable. Please try again shortly. (${lastError})` },
+        { status: 503 }
+      )
+    } else {
+      // Text-only: use the fast model
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://wisely-ai.app",
+          "X-Title": "Wisely AI Assistant",
+        },
+        body: JSON.stringify({
+          model: FAST_MODEL,
+          messages: formattedMessages,
+          stream: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error("OpenRouter API error:", response.status, errorText)
+        try {
+          const errorJson = JSON.parse(errorText)
+          return NextResponse.json({ error: errorJson?.error?.message || "AI service error." }, { status: response.status })
+        } catch {
+          return NextResponse.json({ error: "Failed to connect to AI service. Please try again." }, { status: response.status })
+        }
+      }
+
+      return streamResponse(response)
+    }
   } catch (error: any) {
     console.error("Chat API error:", error?.message || error)
-
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
       { status: 500 }
     )
   }
+}
+
+// Helper: stream an OpenRouter SSE response to the client
+function streamResponse(response: Response): Response {
+  const encoder = new TextEncoder()
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder()
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const text = decoder.decode(value, { stream: true })
+          const lines = text.split("\n")
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || !trimmed.startsWith("data: ")) continue
+
+            const data = trimmed.slice(6)
+
+            if (data === "[DONE]") {
+              continue
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices?.[0]?.delta?.content
+
+              if (content) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+                )
+              }
+
+              if (parsed.error) {
+                console.error("Stream error from provider:", parsed.error)
+              }
+            } catch {
+              // Skip malformed JSON lines
+            }
+          }
+        }
+
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+        controller.close()
+      } catch (err: any) {
+        console.error("Streaming error:", err?.message || err)
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
+          )
+        )
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  })
 }

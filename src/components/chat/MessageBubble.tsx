@@ -187,7 +187,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   td({ children, ...props }) {
                     return (
                       <td
-                        className="px-4 py-2.5 text-[var(--text-secondary)] whitespace-nowrap"
+                        className="px-4 py-2.5 text-[var(--text-secondary)]"
                         {...props}
                       >
                         {children}
@@ -243,7 +243,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                     }
 
                     return (
-                      <code className={className} {...props}>
+                      <code className="px-1.5 py-0.5 rounded bg-[var(--code-bg)] text-[var(--code-text)] text-[0.85em] font-mono" {...props}>
                         {children}
                       </code>
                     )

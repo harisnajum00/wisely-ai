@@ -93,7 +93,6 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             image: session.user.image || undefined,
           })
           setCurrentView('chat')
-          handleClose()
         }
       } else {
         const res = await fetch('/api/auth/register', {
@@ -131,7 +130,6 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             image: session.user.image || undefined,
           })
           setCurrentView('chat')
-          handleClose()
         }
       }
     } catch (err) {
@@ -142,14 +140,8 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   }
 
   const handleGoogleSignIn = async () => {
-    setError('')
-    setLoading(true)
-    try {
-      await signIn('google', { callbackUrl: '/' })
-    } catch {
-      setError('Google sign-in failed. Please try again.')
-      setLoading(false)
-    }
+    // Google OAuth is not configured yet — show a message
+    setError('Google sign-in is coming soon. Please use email/password.')
   }
 
   return (
