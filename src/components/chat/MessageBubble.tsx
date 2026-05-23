@@ -22,13 +22,17 @@ function isErrorMessage(content: string): boolean {
   return (
     lower.includes('rate limit') ||
     lower.includes('free-models-per-day') ||
+    lower.includes('daily limit reached') ||
     lower.includes('daily free model limit') ||
+    lower.includes('openrouter daily limit') ||
     lower.includes('temporarily unavailable') ||
     lower.includes('⚠️') ||
     lower.startsWith('connection error') ||
     lower.startsWith('failed to') ||
     lower.startsWith('something went wrong') ||
-    (lower.includes('unavailable') && content.length < 300)
+    lower.includes('api key') ||
+    lower.includes('ai service is not configured') ||
+    (lower.includes('unavailable') && content.length < 500)
   )
 }
 
@@ -153,9 +157,22 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
           {isUser ? (
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
           ) : isErrorMessage(message.content) ? (
-            <div className="flex items-start gap-2.5 text-sm">
-              <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-              <span className="text-muted-foreground leading-relaxed">{message.content.replace(/^⚠️\s*/, '')}</span>
+            <div className="text-sm">
+              <div className="flex items-start gap-2.5 mb-2">
+                <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
+                <span className="text-amber-400/90 font-medium">
+                  {message.content.includes('\n') ? message.content.split('\n')[0] : 'Something went wrong'}
+                </span>
+              </div>
+              {message.content.includes('\n') && (
+                <div className="ml-6 space-y-1.5">
+                  {message.content.split('\n').slice(1).filter(line => line.trim()).map((line, i) => (
+                    <p key={i} className="text-muted-foreground leading-relaxed text-sm">
+                      {line.replace(/^⚠️\s*/, '')}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="markdown-content text-sm">

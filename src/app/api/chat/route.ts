@@ -48,6 +48,10 @@ IMAGE ANALYSIS:
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_MODEL || "gemma4"
 const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434"
 
+// Gemini API (free tier: 1500 requests/day, separate from OpenRouter!)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
+const GEMINI_MODEL = "gemini-2.0-flash"
+
 // OpenRouter models — fallback chains for resilience
 const TEXT_MODELS = [
   "openai/gpt-oss-120b:free",
@@ -121,7 +125,6 @@ async function tryOpenRouterModel(
 
 /**
  * Try Ollama for image analysis — local, no rate limits, fast
- * Falls back gracefully if Ollama is not running or model not available
  */
 async function tryOllamaVision(
   userText: string,
@@ -130,15 +133,12 @@ async function tryOllamaVision(
   systemPrompt: string
 ): Promise<Response | null> {
   try {
-    // Build Ollama messages
     const ollamaMessages: Array<{ role: string; content: string }> = []
 
-    // Add conversation history
     for (const msg of conversationHistory) {
       ollamaMessages.push({ role: msg.role, content: msg.content })
     }
 
-    // Add the latest user message with image
     ollamaMessages.push({ role: "user", content: userText })
 
     console.log(`Trying Ollama vision model: ${OLLAMA_VISION_MODEL} at ${OLLAMA_HOST}`)
@@ -151,7 +151,6 @@ async function tryOllamaVision(
       stream: true,
     })
 
-    // Convert Ollama streaming response to our SSE format
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
@@ -169,15 +168,11 @@ async function tryOllamaVision(
           controller.close()
         } catch (err: any) {
           console.error("Ollama streaming error:", err?.message || err)
-          try {
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-          } catch {}
+          try { controller.enqueue(encoder.encode("data: [DONE]\n\n")) } catch {}
           try { controller.close() } catch {}
         }
       },
-      cancel() {
-        // Client disconnected
-      },
+      cancel() {},
     })
 
     return new Response(stream, {
@@ -190,12 +185,147 @@ async function tryOllamaVision(
   } catch (e: any) {
     const errMsg = e?.message || "Ollama unavailable"
     console.log(`Ollama vision failed: ${errMsg}`)
+    return null
+  }
+}
 
-    // Check if it's a "model not found" error — we could auto-pull
-    if (errMsg.includes("not found") || errMsg.includes("model")) {
-      console.log(`Hint: Run 'ollama pull ${OLLAMA_VISION_MODEL}' to download the model`)
+/**
+ * Try Google Gemini API for image analysis — free tier (1500/day), separate from OpenRouter!
+ * Get your free key at: https://aistudio.google.com/apikey
+ */
+async function tryGeminiVision(
+  userText: string,
+  imageBase64: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  systemPrompt: string
+): Promise<Response | null> {
+  if (!GEMINI_API_KEY) {
+    console.log("Gemini API key not configured — skipping")
+    return null
+  }
+
+  try {
+    console.log(`Trying Gemini vision model: ${GEMINI_MODEL}`)
+
+    // Parse base64 data
+    let base64Data = imageBase64
+    let mimeType = "image/png"
+
+    if (imageBase64.startsWith("data:")) {
+      const matches = imageBase64.match(/^data:(.+?);base64,(.+)$/)
+      if (matches) {
+        mimeType = matches[1]
+        base64Data = matches[2]
+      }
     }
 
+    // Build Gemini contents
+    const contents: Array<any> = []
+
+    // Add conversation history (Gemini format)
+    for (const msg of conversationHistory) {
+      contents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      })
+    }
+
+    // Add the latest user message with image
+    contents.push({
+      role: "user",
+      parts: [
+        { text: userText || "What do you see in this image?" },
+        {
+          inline_data: {
+            mime_type: mimeType,
+            data: base64Data,
+          },
+        },
+      ],
+    })
+
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    )
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text()
+      console.log(`Gemini vision failed: ${errorText.slice(0, 200)}`)
+      return null
+    }
+
+    // Convert Gemini SSE to our SSE format
+    const encoder = new TextEncoder()
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          const reader = geminiResponse.body!.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ""
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split("\n")
+            buffer = lines.pop() || ""
+
+            for (const line of lines) {
+              const trimmed = line.trim()
+              if (!trimmed || !trimmed.startsWith("data: ")) continue
+
+              const data = trimmed.slice(6)
+              try {
+                const parsed = JSON.parse(data)
+                const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+
+                if (text) {
+                  controller.enqueue(
+                    encoder.encode(`data: ${JSON.stringify({ content: text })}\n\n`)
+                  )
+                }
+              } catch {
+                // Skip malformed JSON
+              }
+            }
+          }
+
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+          controller.close()
+        } catch (err: any) {
+          console.error("Gemini streaming error:", err?.message || err)
+          try { controller.enqueue(encoder.encode("data: [DONE]\n\n")) } catch {}
+          try { controller.close() } catch {}
+        }
+      },
+      cancel() {},
+    })
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    })
+  } catch (e: any) {
+    console.log(`Gemini vision exception: ${e?.message || "Unknown error"}`)
     return null
   }
 }
@@ -249,35 +379,42 @@ export async function POST(request: NextRequest) {
           ],
         }
 
-        // ═══════════════════════════════════════════
-        // PRIORITY 1: Try Ollama for image analysis (local, no rate limits!)
-        // ═══════════════════════════════════════════
         const conversationHistory = messages
           .filter((m: any) => m.role === "user" || m.role === "assistant")
           .map((m: any) => ({ role: m.role, content: m.content }))
 
+        // ═══════════════════════════════════════════
+        // PRIORITY 1: Ollama (local, unlimited, free)
+        // ═══════════════════════════════════════════
         const ollamaResponse = await tryOllamaVision(
-          userText,
-          imageBase64,
-          conversationHistory,
-          systemPrompt
+          userText, imageBase64, conversationHistory, systemPrompt
         )
-
         if (ollamaResponse) {
           console.log("Ollama vision succeeded — using local model")
           return ollamaResponse
         }
 
-        console.log("Ollama unavailable — falling back to OpenRouter")
+        // ═══════════════════════════════════════════
+        // PRIORITY 2: Google Gemini (free tier, 1500/day)
+        // ═══════════════════════════════════════════
+        const geminiResponse = await tryGeminiVision(
+          userText, imageBase64, conversationHistory, systemPrompt
+        )
+        if (geminiResponse) {
+          console.log("Gemini vision succeeded — using Google AI")
+          return geminiResponse
+        }
+
+        console.log("Ollama & Gemini unavailable — falling back to OpenRouter")
       }
     }
 
     // ═══════════════════════════════════════════
-    // PRIORITY 2: OpenRouter (text or vision fallback)
+    // PRIORITY 3: OpenRouter (text or vision fallback)
     // ═══════════════════════════════════════════
     if (!apiKey) {
       return NextResponse.json(
-        { error: "AI service is not configured. Please add an OpenRouter API key or install Ollama locally." },
+        { error: "AI service is not configured. Please add an API key in your .env file." },
         { status: 503 }
       )
     }
@@ -292,7 +429,7 @@ export async function POST(request: NextRequest) {
       if (result.isRateLimit) {
         hitRateLimit = true
         lastError = result.error
-        continue // Try next model
+        continue
       }
 
       if (!result.response) {
@@ -300,15 +437,14 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Success — stream the response
       return streamResponse(result.response)
     }
 
-    // All models failed
+    // All OpenRouter models failed
     if (hitRateLimit) {
       return NextResponse.json(
         {
-          error: "Daily free model limit reached on OpenRouter. Install Ollama locally with 'ollama pull gemma4' for unlimited image analysis, or try again later."
+          error: "OpenRouter daily limit reached. To fix this:\n\n1. Add a free Google Gemini API key (aistudio.google.com/apikey) — 1500 image requests/day free\n2. Or install Ollama locally with 'ollama pull gemma4' for unlimited analysis\n3. Or wait 24 hours for the OpenRouter limit to reset"
         },
         { status: 429 }
       )
@@ -364,7 +500,6 @@ function streamResponse(response: Response): Response {
                 )
               }
 
-              // Handle mid-stream errors from provider
               if (parsed.error) {
                 const errMsg = parsed.error?.message || JSON.stringify(parsed.error)
                 const isRateLimit =
@@ -375,7 +510,7 @@ function streamResponse(response: Response): Response {
                   controller.enqueue(
                     encoder.encode(
                       `data: ${JSON.stringify({
-                        content: "\n\nDaily free model limit reached. Install Ollama locally for unlimited image analysis, or try again later."
+                        content: "\n\nOpenRouter daily limit reached. Try again later or add a free Gemini API key for unlimited image analysis."
                       })}\n\n`
                     )
                   )
@@ -407,9 +542,7 @@ function streamResponse(response: Response): Response {
         try { controller.close() } catch {}
       }
     },
-    cancel() {
-      // Client disconnected — clean up
-    },
+    cancel() {},
   })
 
   return new Response(stream, {
