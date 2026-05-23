@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import ollama from "ollama"
 
 const SYSTEM_PROMPT = `You are Wisely, a premium AI assistant. You are intelligent, helpful, and conversational.
 
@@ -43,7 +44,11 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// Models on OpenRouter — fallback chains for resilience
+// Ollama vision model (local, no rate limits!)
+const OLLAMA_VISION_MODEL = process.env.OLLAMA_MODEL || "gemma4"
+const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434"
+
+// OpenRouter models — fallback chains for resilience
 const TEXT_MODELS = [
   "openai/gpt-oss-120b:free",
   "qwen/qwen3-235b-a22b:free",
@@ -65,7 +70,7 @@ interface ModelCallResult {
   isRateLimit: boolean
 }
 
-async function tryModel(
+async function tryOpenRouterModel(
   model: string,
   apiKey: string,
   formattedMessages: Array<any>
@@ -114,18 +119,91 @@ async function tryModel(
   }
 }
 
+/**
+ * Try Ollama for image analysis — local, no rate limits, fast
+ * Falls back gracefully if Ollama is not running or model not available
+ */
+async function tryOllamaVision(
+  userText: string,
+  imageBase64: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  systemPrompt: string
+): Promise<Response | null> {
+  try {
+    // Build Ollama messages
+    const ollamaMessages: Array<{ role: string; content: string }> = []
+
+    // Add conversation history
+    for (const msg of conversationHistory) {
+      ollamaMessages.push({ role: msg.role, content: msg.content })
+    }
+
+    // Add the latest user message with image
+    ollamaMessages.push({ role: "user", content: userText })
+
+    console.log(`Trying Ollama vision model: ${OLLAMA_VISION_MODEL} at ${OLLAMA_HOST}`)
+
+    const ollamaClient = new ollama.Ollama({ host: OLLAMA_HOST })
+
+    const response = await ollamaClient.chat({
+      model: OLLAMA_VISION_MODEL,
+      messages: ollamaMessages,
+      stream: true,
+    })
+
+    // Convert Ollama streaming response to our SSE format
+    const encoder = new TextEncoder()
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of response) {
+            const content = chunk.message?.content
+            if (content) {
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ content })}\n\n`)
+              )
+            }
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+          controller.close()
+        } catch (err: any) {
+          console.error("Ollama streaming error:", err?.message || err)
+          try {
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+          } catch {}
+          try { controller.close() } catch {}
+        }
+      },
+      cancel() {
+        // Client disconnected
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    })
+  } catch (e: any) {
+    const errMsg = e?.message || "Ollama unavailable"
+    console.log(`Ollama vision failed: ${errMsg}`)
+
+    // Check if it's a "model not found" error — we could auto-pull
+    if (errMsg.includes("not found") || errMsg.includes("model")) {
+      console.log(`Hint: Run 'ollama pull ${OLLAMA_VISION_MODEL}' to download the model`)
+    }
+
+    return null
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages, files, imageBase64, customInstructions } = await request.json()
     const apiKey = process.env.OPENROUTER_API_KEY
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "AI service is not configured. Please add an OpenRouter API key." },
-        { status: 503 }
-      )
-    }
-
     const hasImage = imageBase64 && imageBase64.length > 100
 
     // Build system prompt with optional custom instructions
@@ -170,16 +248,46 @@ export async function POST(request: NextRequest) {
             { type: "image_url", image_url: { url: imageUrl } },
           ],
         }
+
+        // ═══════════════════════════════════════════
+        // PRIORITY 1: Try Ollama for image analysis (local, no rate limits!)
+        // ═══════════════════════════════════════════
+        const conversationHistory = messages
+          .filter((m: any) => m.role === "user" || m.role === "assistant")
+          .map((m: any) => ({ role: m.role, content: m.content }))
+
+        const ollamaResponse = await tryOllamaVision(
+          userText,
+          imageBase64,
+          conversationHistory,
+          systemPrompt
+        )
+
+        if (ollamaResponse) {
+          console.log("Ollama vision succeeded — using local model")
+          return ollamaResponse
+        }
+
+        console.log("Ollama unavailable — falling back to OpenRouter")
       }
     }
 
-    // Choose the right model chain
+    // ═══════════════════════════════════════════
+    // PRIORITY 2: OpenRouter (text or vision fallback)
+    // ═══════════════════════════════════════════
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "AI service is not configured. Please add an OpenRouter API key or install Ollama locally." },
+        { status: 503 }
+      )
+    }
+
     const modelChain = hasImage ? VISION_MODELS : TEXT_MODELS
     let lastError: string = ""
     let hitRateLimit = false
 
     for (const model of modelChain) {
-      const result = await tryModel(model, apiKey, formattedMessages)
+      const result = await tryOpenRouterModel(model, apiKey, formattedMessages)
 
       if (result.isRateLimit) {
         hitRateLimit = true
@@ -200,7 +308,7 @@ export async function POST(request: NextRequest) {
     if (hitRateLimit) {
       return NextResponse.json(
         {
-          error: "Daily free model limit reached. This resets every 24 hours. You can add credits on OpenRouter for unlimited access, or try again later."
+          error: "Daily free model limit reached on OpenRouter. Install Ollama locally with 'ollama pull gemma4' for unlimited image analysis, or try again later."
         },
         { status: 429 }
       )
@@ -267,7 +375,7 @@ function streamResponse(response: Response): Response {
                   controller.enqueue(
                     encoder.encode(
                       `data: ${JSON.stringify({
-                        content: "\n\n⚠️ Daily free model limit reached. Please try again later or add credits on OpenRouter."
+                        content: "\n\nDaily free model limit reached. Install Ollama locally for unlimited image analysis, or try again later."
                       })}\n\n`
                     )
                   )
@@ -286,7 +394,6 @@ function streamResponse(response: Response): Response {
       } catch (err: any) {
         console.error("Streaming error:", err?.message || err)
 
-        // Only send error if it's not an abort (client disconnected)
         if (err?.name !== "AbortError") {
           try {
             controller.enqueue(
@@ -294,16 +401,10 @@ function streamResponse(response: Response): Response {
                 `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
               )
             )
-          } catch {
-            // Controller already closed
-          }
+          } catch {}
         }
 
-        try {
-          controller.close()
-        } catch {
-          // Already closed
-        }
+        try { controller.close() } catch {}
       }
     },
     cancel() {
