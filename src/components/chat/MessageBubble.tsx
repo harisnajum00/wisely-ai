@@ -6,13 +6,30 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Sparkles, Copy, Check, RefreshCw, User, FileText } from 'lucide-react'
+import { Sparkles, Copy, Check, RefreshCw, User, FileText, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ChatMessage } from '@/lib/store'
 
 interface MessageBubbleProps {
   message: ChatMessage
   onRegenerate?: () => void
+}
+
+// Check if a message content is an error/warning message
+function isErrorMessage(content: string): boolean {
+  if (!content) return false
+  const lower = content.toLowerCase()
+  return (
+    lower.includes('rate limit') ||
+    lower.includes('free-models-per-day') ||
+    lower.includes('daily free model limit') ||
+    lower.includes('temporarily unavailable') ||
+    lower.includes('⚠️') ||
+    lower.startsWith('connection error') ||
+    lower.startsWith('failed to') ||
+    lower.startsWith('something went wrong') ||
+    (lower.includes('unavailable') && content.length < 300)
+  )
 }
 
 export default function MessageBubble({ message, onRegenerate }: MessageBubbleProps) {
@@ -135,6 +152,11 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
 
           {isUser ? (
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          ) : isErrorMessage(message.content) ? (
+            <div className="flex items-start gap-2.5 text-sm">
+              <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
+              <span className="text-muted-foreground leading-relaxed">{message.content.replace(/^⚠️\s*/, '')}</span>
+            </div>
           ) : (
             <div className="markdown-content text-sm">
               <ReactMarkdown

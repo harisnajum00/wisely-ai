@@ -124,6 +124,28 @@ export default function ChatArea() {
     }
   }
 
+  // Make error messages user-friendly
+  const friendlyError = useCallback((error: string): string => {
+    const lower = error.toLowerCase()
+
+    if (lower.includes('rate limit') || lower.includes('free-models-per-day') || lower.includes('429')) {
+      return 'Daily free model limit reached. This resets every 24 hours — try again later. You can also add credits on OpenRouter for unlimited access.'
+    }
+    if (lower.includes('no endpoints') || lower.includes('no available')) {
+      return 'This feature is temporarily unavailable. Please try again in a few minutes.'
+    }
+    if (lower.includes('timeout') || lower.includes('timed out')) {
+      return 'The request took too long. Please try again.'
+    }
+    if (lower.includes('network') || lower.includes('fetch') || lower.includes('failed to connect')) {
+      return 'Connection error. Please check your internet and try again.'
+    }
+
+    // If it's already a friendly message, return as-is
+    if (error.length < 200) return error
+    return 'Something went wrong. Please try again.'
+  }, [])
+
   const handleSend = useCallback(
     async (message: string, files?: File[], imageBase64?: string) => {
       let chatId = currentChatId
@@ -211,7 +233,7 @@ export default function ChatArea() {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
           updateMessage(chatId, assistantMessageId, {
-            content: data?.error || 'Failed to get response from Wisely.',
+            content: friendlyError(data?.error || 'Failed to get response from Wisely.'),
             isLoading: false,
           })
           setIsStreaming(false)
@@ -264,7 +286,7 @@ export default function ChatArea() {
         } else {
           const data = await res.json().catch(() => ({}))
           updateMessage(chatId, assistantMessageId, {
-            content: data?.error || data?.message || 'I could not generate a response.',
+            content: friendlyError(data?.error || data?.message || 'I could not generate a response.'),
             isLoading: false,
           })
         }
@@ -274,7 +296,7 @@ export default function ChatArea() {
         } else {
           console.error('Chat error:', error)
           updateMessage(chatId, assistantMessageId, {
-            content: error?.message || 'Something went wrong. Please try again.',
+            content: friendlyError(error?.message || 'Something went wrong. Please try again.'),
             isLoading: false,
           })
         }
@@ -286,7 +308,7 @@ export default function ChatArea() {
         scrollToBottom()
       }
     },
-    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, scheduleFlush, customInstructions]
+    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, scheduleFlush, customInstructions, friendlyError]
   )
 
   const handleRegenerate = useCallback(
@@ -319,14 +341,14 @@ export default function ChatArea() {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: apiMessages }),
+          body: JSON.stringify({ messages: apiMessages, customInstructions }),
           signal: controller.signal,
         })
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
           updateMessage(currentChatId, messageId, {
-            content: data?.error || 'Failed to regenerate response.',
+            content: friendlyError(data?.error || 'Failed to regenerate response.'),
             isLoading: false,
           })
           setIsStreaming(false)
@@ -351,14 +373,14 @@ export default function ChatArea() {
         } else {
           const data = await res.json().catch(() => ({}))
           updateMessage(currentChatId, messageId, {
-            content: data?.error || 'Could not regenerate response.',
+            content: friendlyError(data?.error || 'Could not regenerate response.'),
             isLoading: false,
           })
         }
       } catch (error: any) {
         if (error.name !== 'AbortError') {
           updateMessage(currentChatId, messageId, {
-            content: 'Something went wrong. Please try again.',
+            content: friendlyError(error?.message || 'Something went wrong.'),
             isLoading: false,
           })
         }
@@ -369,7 +391,7 @@ export default function ChatArea() {
         lastFlushRef.current = ''
       }
     },
-    [currentChatId, updateMessage, scheduleFlush]
+    [currentChatId, updateMessage, scheduleFlush, customInstructions, friendlyError]
   )
 
   // Cleanup on unmount
@@ -418,7 +440,7 @@ export default function ChatArea() {
           >
             <button
               onClick={handleStopGenerating}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--divider-color)] bg-[var(--btn-ghost-bg)] hover:bg-[var(--btn-ghost-hover-bg)] text-foreground/80 hover:text-foreground text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-[var(--divider-color)] bg-[var(--btn-ghost-bg)] hover:bg-[var(--btn-ghost-hover-bg)] text-foreground/80 hover:text-foreground text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
             >
               <Square className="size-3 fill-current" />
               Stop generating

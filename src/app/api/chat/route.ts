@@ -43,14 +43,76 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// Models on OpenRouter
-const FAST_MODEL = "openai/gpt-oss-120b:free"
+// Models on OpenRouter — fallback chains for resilience
+const TEXT_MODELS = [
+  "openai/gpt-oss-120b:free",
+  "qwen/qwen3-235b-a22b:free",
+  "deepseek/deepseek-chat-v3-0324:free",
+  "google/gemma-3-27b-it:free",
+]
+
 const VISION_MODELS = [
   "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
   "google/gemma-4-31b-it:free",
   "google/gemma-4-26b-a4b-it:free",
   "nvidia/nemotron-nano-12b-v2-vl:free",
+  "qwen/qwen3-235b-a22b:free",
 ]
+
+interface ModelCallResult {
+  response: Response | null
+  error: string
+  isRateLimit: boolean
+}
+
+async function tryModel(
+  model: string,
+  apiKey: string,
+  formattedMessages: Array<any>
+): Promise<ModelCallResult> {
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://wisely-ai.app",
+        "X-Title": "Wisely AI Assistant",
+      },
+      body: JSON.stringify({
+        model,
+        messages: formattedMessages,
+        stream: true,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorMsg = `Model ${model} error`
+
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorMsg = errorJson?.error?.message || errorMsg
+      } catch {
+        errorMsg = `Model ${model} returned ${response.status}`
+      }
+
+      const isRateLimit =
+        response.status === 429 ||
+        errorMsg.toLowerCase().includes("rate limit") ||
+        errorMsg.toLowerCase().includes("free-models-per-day")
+
+      console.log(`Model ${model} failed (rate-limit=${isRateLimit}): ${errorMsg}`)
+      return { response: null, error: errorMsg, isRateLimit }
+    }
+
+    return { response, error: "", isRateLimit: false }
+  } catch (e: any) {
+    const errorMsg = e?.message || "Model unavailable"
+    console.log(`Model ${model} exception: ${errorMsg}`)
+    return { response: null, error: errorMsg, isRateLimit: false }
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -111,83 +173,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Choose the right model and make the API call
-    if (hasImage) {
-      // Try vision models with fallback — free models can be rate-limited
-      let lastError: string = ""
-      for (const model of VISION_MODELS) {
-        try {
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://wisely-ai.app",
-              "X-Title": "Wisely AI Assistant",
-            },
-            body: JSON.stringify({
-              model,
-              messages: formattedMessages,
-              stream: true,
-            }),
-          })
+    // Choose the right model chain
+    const modelChain = hasImage ? VISION_MODELS : TEXT_MODELS
+    let lastError: string = ""
+    let hitRateLimit = false
 
-          if (!response.ok) {
-            const errorText = await response.text()
-            try {
-              const errorJson = JSON.parse(errorText)
-              lastError = errorJson?.error?.message || `Model ${model} error`
-            } catch {
-              lastError = `Model ${model} returned ${response.status}`
-            }
-            console.log(`Vision model ${model} failed: ${lastError}`)
-            continue // Try next model
-          }
+    for (const model of modelChain) {
+      const result = await tryModel(model, apiKey, formattedMessages)
 
-          // This model worked — stream the response
-          return streamResponse(response)
-        } catch (e: any) {
-          lastError = e?.message || "Vision model unavailable"
-          console.log(`Vision model ${model} exception: ${lastError}`)
-          continue
-        }
+      if (result.isRateLimit) {
+        hitRateLimit = true
+        lastError = result.error
+        continue // Try next model
       }
 
-      // All vision models failed
-      return NextResponse.json(
-        { error: `Image analysis is temporarily unavailable. Please try again shortly. (${lastError})` },
-        { status: 503 }
-      )
-    } else {
-      // Text-only: use the fast model
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://wisely-ai.app",
-          "X-Title": "Wisely AI Assistant",
-        },
-        body: JSON.stringify({
-          model: FAST_MODEL,
-          messages: formattedMessages,
-          stream: true,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("OpenRouter API error:", response.status, errorText)
-        try {
-          const errorJson = JSON.parse(errorText)
-          return NextResponse.json({ error: errorJson?.error?.message || "AI service error." }, { status: response.status })
-        } catch {
-          return NextResponse.json({ error: "Failed to connect to AI service. Please try again." }, { status: response.status })
-        }
+      if (!result.response) {
+        lastError = result.error
+        continue
       }
 
-      return streamResponse(response)
+      // Success — stream the response
+      return streamResponse(result.response)
     }
+
+    // All models failed
+    if (hitRateLimit) {
+      return NextResponse.json(
+        {
+          error: "Daily free model limit reached. This resets every 24 hours. You can add credits on OpenRouter for unlimited access, or try again later."
+        },
+        { status: 429 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: "AI service is temporarily unavailable. Please try again in a moment." },
+      { status: 503 }
+    )
   } catch (error: any) {
     console.error("Chat API error:", error?.message || error)
     return NextResponse.json(
@@ -234,8 +256,24 @@ function streamResponse(response: Response): Response {
                 )
               }
 
+              // Handle mid-stream errors from provider
               if (parsed.error) {
-                console.error("Stream error from provider:", parsed.error)
+                const errMsg = parsed.error?.message || JSON.stringify(parsed.error)
+                const isRateLimit =
+                  errMsg.toLowerCase().includes("rate limit") ||
+                  errMsg.toLowerCase().includes("free-models-per-day")
+
+                if (isRateLimit) {
+                  controller.enqueue(
+                    encoder.encode(
+                      `data: ${JSON.stringify({
+                        content: "\n\n⚠️ Daily free model limit reached. Please try again later or add credits on OpenRouter."
+                      })}\n\n`
+                    )
+                  )
+                } else {
+                  console.error("Stream error from provider:", parsed.error)
+                }
               }
             } catch {
               // Skip malformed JSON lines
@@ -247,13 +285,29 @@ function streamResponse(response: Response): Response {
         controller.close()
       } catch (err: any) {
         console.error("Streaming error:", err?.message || err)
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
-          )
-        )
-        controller.close()
+
+        // Only send error if it's not an abort (client disconnected)
+        if (err?.name !== "AbortError") {
+          try {
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ error: err?.message || "Stream error" })}\n\n`
+              )
+            )
+          } catch {
+            // Controller already closed
+          }
+        }
+
+        try {
+          controller.close()
+        } catch {
+          // Already closed
+        }
       }
+    },
+    cancel() {
+      // Client disconnected — clean up
     },
   })
 
