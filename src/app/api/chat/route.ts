@@ -43,18 +43,22 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// OpenRouter fallback models
+// OpenRouter fallback models (updated June 2025 — best free models)
 const TEXT_MODELS = [
-  "nvidia/nemotron-3-nano-30b-a3b:free",
-  "google/gemma-3-27b-it:free",
-  "meta-llama/llama-4-scout:free",
-  "qwen/qwen3-235b-a22b:free",
-  "deepseek/deepseek-chat-v3-0324:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",   // 1M ctx, most capable free model
+  "qwen/qwen3-coder:free",                     // 1M ctx, great for code & reasoning
+  "nvidia/nemotron-3-super-120b-a12b:free",   // 1M ctx, strong general purpose
+  "moonshotai/kimi-k2.6:free",                 // 262K ctx, excellent reasoning
+  "google/gemma-4-31b-it:free",                // 262K ctx, Google's latest
+  "meta-llama/llama-3.3-70b-instruct:free",   // 131K ctx, reliable fallback
 ]
 
 const VISION_MODELS = [
-  "google/gemma-3-27b-it:free",
-  "meta-llama/llama-4-scout:free",
+  "google/gemma-4-31b-it:free",                           // 262K ctx, image+video
+  "moonshotai/kimi-k2.6:free",                             // 262K ctx, image support
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",    // 256K ctx, image+audio+video
+  "nvidia/nemotron-nano-12b-v2-vl:free",                   // 128K ctx, image+video
+  "google/gemma-4-26b-a4b-it:free",                        // 262K ctx, image+video
 ]
 
 // Friendly error messages
