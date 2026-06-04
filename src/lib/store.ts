@@ -98,17 +98,11 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   // Navigation
   currentView: 'landing',
-  setCurrentView: (view) => {
-    saveToStorage('wisely-current-view', view)
-    set({ currentView: view })
-  },
+  setCurrentView: (view) => set({ currentView: view }),
 
   // Auth
   user: null,
-  setUser: (user) => {
-    saveToStorage('wisely-user', user)
-    set({ user, isAuthenticated: !!user })
-  },
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
   authMode: 'login',
   setAuthMode: (mode) => set({ authMode: mode }),
   isAuthenticated: false,
@@ -120,13 +114,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     saveToStorage('wisely-current-chat-id', id)
     set({ currentChatId: id })
   },
-  addChat: (chat) => {
+  addChat: (chat) =>
     set((state) => {
       const chats = [chat, ...state.chats]
       saveToStorage('wisely-chats', chats)
       return { chats }
-    })
-  },
+    }),
   updateChat: (id, updates) =>
     set((state) => {
       const chats = state.chats.map((c) => (c.id === id ? { ...c, ...updates } : c))
@@ -136,11 +129,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   deleteChat: (id) =>
     set((state) => {
       const chats = state.chats.filter((c) => c.id !== id)
+      const currentChatId = state.currentChatId === id ? null : state.currentChatId
       saveToStorage('wisely-chats', chats)
-      return {
-        chats,
-        currentChatId: state.currentChatId === id ? null : state.currentChatId,
-      }
+      saveToStorage('wisely-current-chat-id', currentChatId)
+      return { chats, currentChatId }
     }),
   addMessage: (chatId, message) =>
     set((state) => {
@@ -187,17 +179,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const isDarkMode = themeRaw !== 'light'
     const chats = loadFromStorage<Chat[]>('wisely-chats', [])
     const currentChatId = loadFromStorage<string | null>('wisely-current-chat-id', null)
-    const currentView = loadFromStorage<AppView>('wisely-current-view', 'landing')
-    const savedUser = loadFromStorage<User | null>('wisely-user', null)
-    set({
-      customInstructions,
-      isDarkMode,
-      chats,
-      currentChatId,
-      currentView: currentView === 'auth' ? 'landing' : currentView,
-      user: savedUser,
-      isAuthenticated: !!savedUser,
-    })
+    set({ customInstructions, isDarkMode, chats, currentChatId })
   },
 
   // Helpers

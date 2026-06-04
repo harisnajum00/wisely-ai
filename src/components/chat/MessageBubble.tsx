@@ -6,34 +6,13 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Sparkles, Copy, Check, RefreshCw, User, FileText, AlertTriangle } from 'lucide-react'
+import { Sparkles, Copy, Check, RefreshCw, User, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ChatMessage } from '@/lib/store'
 
 interface MessageBubbleProps {
   message: ChatMessage
   onRegenerate?: () => void
-}
-
-// Check if a message content is an error/warning message
-function isErrorMessage(content: string): boolean {
-  if (!content) return false
-  const lower = content.toLowerCase()
-  return (
-    lower.includes('rate limit') ||
-    lower.includes('free-models-per-day') ||
-    lower.includes('daily limit reached') ||
-    lower.includes('daily free model limit') ||
-    lower.includes('openrouter daily limit') ||
-    lower.includes('temporarily unavailable') ||
-    lower.includes('⚠️') ||
-    lower.startsWith('connection error') ||
-    lower.startsWith('failed to') ||
-    lower.startsWith('something went wrong') ||
-    lower.includes('api key') ||
-    lower.includes('ai service is not configured') ||
-    (lower.includes('unavailable') && content.length < 500)
-  )
 }
 
 export default function MessageBubble({ message, onRegenerate }: MessageBubbleProps) {
@@ -156,24 +135,6 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
 
           {isUser ? (
             <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-          ) : isErrorMessage(message.content) ? (
-            <div className="text-sm">
-              <div className="flex items-start gap-2.5 mb-2">
-                <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-                <span className="text-amber-400/90 font-medium">
-                  {message.content.includes('\n') ? message.content.split('\n')[0] : 'Something went wrong'}
-                </span>
-              </div>
-              {message.content.includes('\n') && (
-                <div className="ml-6 space-y-1.5">
-                  {message.content.split('\n').slice(1).filter(line => line.trim()).map((line, i) => (
-                    <p key={i} className="text-muted-foreground leading-relaxed text-sm">
-                      {line.replace(/^⚠️\s*/, '')}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
           ) : (
             <div className="markdown-content text-sm">
               <ReactMarkdown
@@ -226,7 +187,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   td({ children, ...props }) {
                     return (
                       <td
-                        className="px-4 py-2.5 text-[var(--text-secondary)]"
+                        className="px-4 py-2.5 text-[var(--text-secondary)] whitespace-nowrap"
                         {...props}
                       >
                         {children}
@@ -282,7 +243,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                     }
 
                     return (
-                      <code className="px-1.5 py-0.5 rounded bg-[var(--code-bg)] text-[var(--code-text)] text-[0.85em] font-mono" {...props}>
+                      <code className={className} {...props}>
                         {children}
                       </code>
                     )
