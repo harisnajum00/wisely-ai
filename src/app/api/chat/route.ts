@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const SYSTEM_PROMPT = `You are Wisely, a premium AI assistant. You are intelligent, helpful, and conversational.
 
@@ -291,11 +292,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === PRIMARY: Try z-ai-web-dev-sdk (non-streaming for stability) ===
+    // === PROVIDER 1: Try z-ai-web-dev-sdk (non-streaming for stability) ===
     try {
       const ZAI = (await import("z-ai-web-dev-sdk")).default
       const zai = await ZAI.create()
-      console.log("[Wisely] Using z-ai-web-dev-sdk as primary provider")
+      console.log("[Wisely] Using z-ai-web-dev-sdk (provider 1)")
 
       let completion: any
       if (hasImage) {
@@ -322,9 +323,102 @@ export async function POST(request: NextRequest) {
       console.error("[Wisely] z-ai error:", zaiErr?.message || zaiErr)
     }
 
-    // === FALLBACK: Try OpenRouter if z-ai fails ===
+    // === PROVIDER 2: Try Google Gemini (free 1500 requests/day) ===
+    const geminiKey = process.env.GEMINI_API_KEY
+    if (geminiKey) {
+      try {
+        console.log("[Wisely] Trying Google Gemini (provider 2)")
+        const genAI = new GoogleGenerativeAI(geminiKey)
+
+        // Use Gemini 2.0 Flash for text, Gemini 2.0 Flash for vision too
+        const modelName = "gemini-2.0-flash"
+        const model = genAI.getGenerativeModel({ model: modelName })
+
+        // Convert messages to Gemini format
+        const geminiHistory: any[] = []
+        let lastUserText = ""
+        let geminiParts: any[] = []
+
+        for (const msg of formattedMessages) {
+          if (msg.role === "system") {
+            // Gemini uses systemInstruction instead of system messages
+            continue
+          }
+
+          if (msg.role === "user") {
+            // Handle multimodal content (text + image)
+            if (Array.isArray(msg.content)) {
+              const parts: any[] = []
+              for (const part of msg.content) {
+                if (part.type === "text") {
+                  parts.push({ text: part.text })
+                  lastUserText = part.text
+                } else if (part.type === "image_url" && part.image_url?.url) {
+                  const imgUrl = part.image_url.url
+                  if (imgUrl.startsWith("data:")) {
+                    const matches = imgUrl.match(/^data:([^;]+);base64,(.+)$/)
+                    if (matches) {
+                      parts.push({
+                        inlineData: {
+                          mimeType: matches[1],
+                          data: matches[2],
+                        },
+                      })
+                    }
+                  }
+                }
+              }
+              geminiHistory.push({ role: "user", parts })
+            } else {
+              lastUserText = msg.content
+              geminiHistory.push({ role: "user", parts: [{ text: msg.content }] })
+            }
+          } else if (msg.role === "assistant") {
+            const text = typeof msg.content === "string" ? msg.content : ""
+            geminiHistory.push({ role: "model", parts: [{ text }] })
+          }
+        }
+
+        // Use chat with history for multi-turn, or generateContent for single turn
+        if (geminiHistory.length > 1) {
+          // Multi-turn conversation
+          const chat = model.startChat({
+            history: geminiHistory.slice(0, -1),
+            systemInstruction: systemPrompt,
+          })
+          const lastMessage = geminiHistory[geminiHistory.length - 1]
+          const result = await chat.sendMessage(lastMessage.parts)
+          const responseText = result.response.text()
+
+          if (responseText) {
+            console.log("[Wisely] Gemini responded successfully, streaming to client")
+            return streamAsSSE(responseText)
+          }
+        } else if (geminiHistory.length === 1) {
+          // Single message
+          const result = await model.generateContent({
+            contents: geminiHistory,
+            systemInstruction: systemPrompt,
+          })
+          const responseText = result.response.text()
+
+          if (responseText) {
+            console.log("[Wisely] Gemini responded successfully, streaming to client")
+            return streamAsSSE(responseText)
+          }
+        }
+
+        console.error("[Wisely] Gemini returned empty content")
+      } catch (geminiErr: any) {
+        console.error("[Wisely] Gemini error:", geminiErr?.message || geminiErr)
+      }
+    } else {
+      console.log("[Wisely] No GEMINI_API_KEY set, skipping Gemini provider")
+    }
+
+    // === PROVIDER 3: Try OpenRouter as final fallback ===
     if (openRouterKey) {
-      console.log("[Wisely] Falling back to OpenRouter")
+      console.log("[Wisely] Trying OpenRouter (provider 3)")
       const result = await tryOpenRouterStreaming(formattedMessages, hasImage, openRouterKey)
 
       if (result) {
@@ -335,7 +429,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If both failed
+    // If all providers failed
     return NextResponse.json(
       { error: "All AI providers are currently unavailable. Please try again in a moment." },
       { status: 503 }
