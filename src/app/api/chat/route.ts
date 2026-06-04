@@ -157,7 +157,7 @@ async function tryOpenRouterStreaming(
       const errorText = await response.text()
       console.error(`[Wisely] OpenRouter model ${model} failed:`, response.status, errorText)
 
-      // Auth error — no point trying other models
+      // Auth error — no point trying other models (bad key affects all)
       if (response.status === 401) {
         try {
           const errorJson = JSON.parse(errorText)
@@ -168,15 +168,10 @@ async function tryOpenRouterStreaming(
         }
       }
 
-      // Rate limit — no point trying other free models
+      // Rate limit — try next model, different free models may have separate limits
       if (response.status === 429) {
-        try {
-          const errorJson = JSON.parse(errorText)
-          const msg = errorJson?.error?.message || "Rate limited"
-          return NextResponse.json({ error: friendlyError(429, msg) }, { status: 429 })
-        } catch {
-          return NextResponse.json({ error: friendlyError(429, "Rate limited") }, { status: 429 })
-        }
+        console.warn(`[Wisely] Model ${model} rate limited, trying next model...`)
+        continue // Don't give up — try the next model in the chain
       }
     } catch (fetchErr: any) {
       console.error(`[Wisely] OpenRouter model ${model} fetch error:`, fetchErr?.message)
