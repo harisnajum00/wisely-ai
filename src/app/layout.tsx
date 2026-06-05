@@ -34,8 +34,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Haris" }],
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/wisely-logo.png", type: "image/png", sizes: "591x591" },
+      { url: "/favicon-light.ico", media: "(prefers-color-scheme: light)", sizes: "48x48" },
+      { url: "/favicon-dark.ico", media: "(prefers-color-scheme: dark)", sizes: "48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
     ],
     apple: "/apple-touch-icon.png",
   },
