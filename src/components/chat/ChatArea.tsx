@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import EmptyState from './EmptyState'
+import RateLimitPopup from './RateLimitPopup'
 
 export default function ChatArea() {
   const {
@@ -22,6 +23,31 @@ export default function ChatArea() {
   // Throttle streaming updates — batch tokens and flush every 60ms for smoother UI
   const streamBufferRef = useRef<{ chatId: string; msgId: string; content: string } | null>(null)
   const streamTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Rate limit popup state
+  const [showRateLimit, setShowRateLimit] = useState(false)
+  const [rateLimitResetTime, setRateLimitResetTime] = useState<Date | null>(null)
+
+  // Detect rate limit errors and show popup
+  const handleRateLimitError = useCallback((errorMsg: string) => {
+    if (
+      errorMsg.toLowerCase().includes('limit') ||
+      errorMsg.toLowerCase().includes('rate') ||
+      errorMsg.toLowerCase().includes('per day') ||
+      errorMsg.toLowerCase().includes('credits')
+    ) {
+      // OpenRouter/Gemini daily limit resets at midnight Pacific Time
+      const now = new Date()
+      const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }))
+      const resetTime = new Date(pacificNow)
+      resetTime.setDate(resetTime.getDate() + 1)
+      resetTime.setHours(0, 0, 0, 0)
+      // Convert back to local time
+      const localReset = new Date(resetTime.toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }))
+      setRateLimitResetTime(localReset)
+      setShowRateLimit(true)
+    }
+  }, [])
 
   const currentChat = getCurrentChat()
 
@@ -198,6 +224,7 @@ export default function ChatArea() {
           // Non-streaming error response (e.g., vision, or API key missing)
           const data = await res.json().catch(() => ({}))
           const errorMsg = data?.error || 'Failed to get response from Wisely.'
+          handleRateLimitError(errorMsg)
           updateMessage(chatId, assistantMessageId, {
             content: errorMsg,
             isLoading: false,
@@ -267,15 +294,17 @@ export default function ChatArea() {
         }
       } catch (error: any) {
         console.error('Chat error:', error)
+        const errorMsg = error?.message || 'Something went wrong. Please try again.'
+        handleRateLimitError(errorMsg)
         updateMessage(chatId, assistantMessageId, {
-          content: error?.message || 'Something went wrong. Please try again.',
+          content: errorMsg,
           isLoading: false,
         })
       }
 
       scrollToBottom()
     },
-    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, bufferedUpdate, customInstructions]
+    [currentChatId, createNewChat, addMessage, updateMessage, updateChat, scrollToBottom, bufferedUpdate, customInstructions, handleRateLimitError]
   )
 
   const handleRegenerate = useCallback(
@@ -362,6 +391,13 @@ export default function ChatArea() {
 
   return (
     <div className="flex-1 flex flex-col h-full relative bg-chat-bg">
+      {/* Rate limit popup */}
+      <RateLimitPopup
+        isOpen={showRateLimit}
+        onClose={() => setShowRateLimit(false)}
+        resetTime={rateLimitResetTime}
+      />
+
       {/* Messages area */}
       <div
         ref={scrollContainerRef}

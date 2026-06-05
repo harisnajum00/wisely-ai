@@ -101,8 +101,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
       <span className="truncate text-sm flex-1">{chat.title}</span>
       <button
         onClick={(e) => handleDeleteClick(e, chat.id, chat.title)}
-        className={`p-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 text-muted-foreground/40 transition-all ${
-          isMobile ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'
+        className={`p-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 text-muted-foreground/40 transition-all shrink-0 ${
+          currentChatId === chat.id ? 'opacity-60 hover:opacity-100' : isMobile ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'
         }`}
         title="Delete chat"
       >
