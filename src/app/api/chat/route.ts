@@ -330,14 +330,18 @@ export async function POST(request: NextRequest) {
         console.log("[Wisely] Trying Google Gemini (provider 2)")
         const genAI = new GoogleGenerativeAI(geminiKey)
 
-        // Use Gemini 2.0 Flash for text, Gemini 2.0 Flash for vision too
-        const modelName = "gemini-2.0-flash"
+        // Smart model selection: detect coding tasks for better model routing
+        const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop()?.content || ''
+        const isCodingTask = /\b(code|coding|program|function|script|debug|fix.*code|write.*code|implement|algorithm|api|python|javascript|typescript|react|node|html|css|sql|database|git|deploy|build|compile|syntax|error|bug|stack|class|method|loop|array|object|json|yaml|docker|server|backend|frontend|fullstack|component|hook|library|package|npm|pip|import|export|async|await|fetch|promise)/i.test(lastUserMsg)
+
+        // Gemini 2.5 Flash for coding (best free code model), 2.0 Flash for general/vision
+        const modelName = isCodingTask ? "gemini-2.5-flash-preview-05-20" : "gemini-2.0-flash"
+        console.log(`[Wisely] Gemini model: ${modelName} (coding: ${isCodingTask})`)
         const model = genAI.getGenerativeModel({ model: modelName })
 
         // Convert messages to Gemini format
         const geminiHistory: any[] = []
         let lastUserText = ""
-        let geminiParts: any[] = []
 
         for (const msg of formattedMessages) {
           if (msg.role === "system") {
