@@ -168,7 +168,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="glass-strong relative w-full max-w-md mx-4 rounded-2xl p-8 glow-border"
+          className="glass-strong relative w-full max-w-md mx-3 sm:mx-4 rounded-2xl p-5 sm:p-8 glow-border max-h-[90dvh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button */}

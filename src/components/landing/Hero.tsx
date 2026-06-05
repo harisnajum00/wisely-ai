@@ -56,39 +56,39 @@ function MockChatPreview() {
       initial={{ opacity: 0, x: 40, scale: 0.95 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
-      className="glass-strong rounded-2xl p-1 shadow-2xl glow-subtle w-full max-w-md"
+      className="glass-strong rounded-2xl p-1 shadow-2xl glow-subtle w-full max-w-sm sm:max-w-md"
     >
       {/* Chat Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[var(--divider-color)]">
+      <div className="flex items-center gap-2.5 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[var(--divider-color)]">
         <div className="relative">
-          <div className="size-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
-            <Bot className="size-3.5 text-white" />
+          <div className="size-6 sm:size-7 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
+            <Bot className="size-3 sm:size-3.5 text-white" />
           </div>
-          <div className="absolute -bottom-0.5 -right-0.5 size-2.5 bg-emerald-400 rounded-full border-2 border-background" />
+          <div className="absolute -bottom-0.5 -right-0.5 size-2 sm:size-2.5 bg-emerald-400 rounded-full border-2 border-background" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground/90">Wisely AI</p>
-          <p className="text-[10px] text-emerald-500/80">Online</p>
+          <p className="text-xs sm:text-sm font-medium text-foreground/90">Wisely AI</p>
+          <p className="text-[9px] sm:text-[10px] text-emerald-500/80">Online</p>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="px-4 py-4 space-y-3 min-h-[200px]">
+      <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-2 sm:space-y-3 min-h-[140px] sm:min-h-[200px]">
         {/* User message */}
         {phase >= 1 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-start gap-2.5 justify-end"
+            className="flex items-start gap-2 sm:gap-2.5 justify-end"
           >
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-md px-3.5 py-2.5 max-w-[80%]">
-              <p className="text-xs text-foreground/80 leading-relaxed">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-md px-3 sm:px-3.5 py-2 sm:py-2.5 max-w-[80%]">
+              <p className="text-[11px] sm:text-xs text-foreground/80 leading-relaxed">
                 Explain quantum computing simply
               </p>
             </div>
-            <div className="size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <User className="size-3 text-muted-foreground" />
+            <div className="size-5 sm:size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <User className="size-2.5 sm:size-3 text-muted-foreground" />
             </div>
           </motion.div>
         )}
@@ -99,16 +99,16 @@ function MockChatPreview() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="flex items-start gap-2.5"
+            className="flex items-start gap-2 sm:gap-2.5"
           >
-            <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
-              <Bot className="size-3 text-white" />
+            <div className="size-5 sm:size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
+              <Bot className="size-2.5 sm:size-3 text-white" />
             </div>
-            <div className="glass border border-[var(--divider-color)] rounded-2xl rounded-tl-md px-3.5 py-2.5 max-w-[80%]">
-              <p className="text-xs text-muted-foreground leading-relaxed">
+            <div className="glass border border-[var(--divider-color)] rounded-2xl rounded-tl-md px-3 sm:px-3.5 py-2 sm:py-2.5 max-w-[80%]">
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
                 Think of a regular computer as a coin — heads or tails. A quantum computer is like a
                 spinning coin that&apos;s both at once. This lets it explore many answers simultaneously,
-                solving certain problems exponentially faster. ⚡
+                solving certain problems exponentially faster.
               </p>
             </div>
           </motion.div>
@@ -120,10 +120,10 @@ function MockChatPreview() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-start gap-2.5"
+            className="flex items-start gap-2 sm:gap-2.5"
           >
-            <div className="size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
-              <Bot className="size-3 text-white" />
+            <div className="size-5 sm:size-6 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center shrink-0">
+              <Bot className="size-2.5 sm:size-3 text-white" />
             </div>
             <div className="glass border border-[var(--divider-color)] rounded-2xl rounded-tl-md">
               <TypingIndicator />
@@ -133,11 +133,11 @@ function MockChatPreview() {
       </div>
 
       {/* Chat Input */}
-      <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 glass border border-[var(--divider-color)] rounded-xl px-3.5 py-2.5">
-          <span className="text-xs text-muted-foreground/40 flex-1">Ask Wisely anything...</span>
-          <div className="size-6 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
-            <ArrowRight className="size-3 text-white" />
+      <div className="px-2.5 sm:px-3 pb-2.5 sm:pb-3">
+        <div className="flex items-center gap-2 glass border border-[var(--divider-color)] rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5">
+          <span className="text-[11px] sm:text-xs text-muted-foreground/40 flex-1">Ask Wisely anything...</span>
+          <div className="size-5 sm:size-6 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
+            <ArrowRight className="size-2.5 sm:size-3 text-white" />
           </div>
         </div>
       </div>
@@ -147,7 +147,7 @@ function MockChatPreview() {
 
 export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
       {/* Background layers */}
       <div className="absolute inset-0 bg-[var(--landing-bg)]" />
       <div className="absolute inset-0 bg-gradient-radial" />
@@ -161,8 +161,8 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
         style={{ animationDelay: '3s' }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 w-full">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12 sm:pb-16 w-full">
+        <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
           {/* Left content */}
           <motion.div
             variants={containerVariants}
@@ -171,8 +171,8 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             className="flex-1 text-center lg:text-left"
           >
             {/* Badge */}
-            <motion.div variants={itemVariants} className="mb-6">
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glow-border bg-primary/[0.08] text-xs font-medium text-primary">
+            <motion.div variants={itemVariants} className="mb-4 sm:mb-6">
+              <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full glow-border bg-primary/[0.08] text-[10px] sm:text-xs font-medium text-primary">
                 <Sparkles className="size-3" />
                 Free for a limited time
               </span>
@@ -181,7 +181,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             {/* Title */}
             <motion.h1
               variants={itemVariants}
-              className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6"
+              className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-4 sm:mb-6"
             >
               <span className="gradient-text-warm">Wisely</span>
               <br />
@@ -191,7 +191,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             {/* Subtitle */}
             <motion.p
               variants={itemVariants}
-              className="text-xl md:text-2xl text-muted-foreground font-light mb-4"
+              className="text-lg sm:text-xl md:text-2xl text-muted-foreground font-light mb-3 sm:mb-4"
             >
               Ask anything. Understand everything.
             </motion.p>
@@ -199,7 +199,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             {/* Description */}
             <motion.p
               variants={itemVariants}
-              className="text-muted-foreground/60 max-w-2xl text-base leading-relaxed mb-8 mx-auto lg:mx-0"
+              className="text-muted-foreground/60 max-w-2xl text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 mx-auto lg:mx-0"
             >
               Your AI assistant for conversation, files, images, learning, and creativity.
               Powered by cutting-edge intelligence to help you think deeper, work faster, and
@@ -209,11 +209,11 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
             {/* Buttons */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 justify-center lg:justify-start"
             >
               <Button
                 onClick={onStartChat}
-                className="btn-primary text-white text-base h-11 px-8 rounded-xl border-0"
+                className="btn-primary text-white text-sm sm:text-base h-10 sm:h-11 px-6 sm:px-8 rounded-xl border-0 w-full sm:w-auto"
                 size="lg"
               >
                 <Sparkles className="size-4" />
@@ -222,7 +222,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
               <Button
                 variant="ghost"
                 onClick={onLearnMore}
-                className="text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] text-base h-11 px-8 rounded-xl border border-[var(--divider-color)]"
+                className="text-muted-foreground hover:text-foreground hover:bg-[var(--hover-bg)] text-sm sm:text-base h-10 sm:h-11 px-6 sm:px-8 rounded-xl border border-[var(--divider-color)] w-full sm:w-auto"
                 size="lg"
               >
                 Learn More
@@ -232,7 +232,7 @@ export default function Hero({ onStartChat, onLearnMore }: HeroProps) {
           </motion.div>
 
           {/* Right - Mock Chat */}
-          <div className="flex-1 w-full max-w-md lg:max-w-lg">
+          <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-lg">
             <MockChatPreview />
           </div>
         </div>

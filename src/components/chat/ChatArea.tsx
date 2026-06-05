@@ -390,7 +390,9 @@ export default function ChatArea() {
   )
 
   return (
-    <div className="flex-1 flex flex-col h-full min-w-0 relative bg-chat-bg overflow-hidden">
+    <div className="flex-1 flex flex-col h-full min-w-0 relative bg-chat-bg overflow-hidden"
+      style={{ touchAction: 'pan-y' }}
+    >
       {/* Rate limit popup */}
       <RateLimitPopup
         isOpen={showRateLimit}
@@ -402,11 +404,12 @@ export default function ChatArea() {
       <div
         ref={scrollContainerRef}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {!currentChat || currentChat.messages.length === 0 ? (
           <EmptyState onSuggestionClick={(suggestion) => handleSend(suggestion)} />
         ) : (
-          <div className="py-4 sm:py-6 space-y-1 sm:space-y-2">
+          <div className="py-3 sm:py-6 space-y-0.5 sm:space-y-2">
             {currentChat.messages.map((msg) => (
               <MessageBubble
                 key={msg.id}
