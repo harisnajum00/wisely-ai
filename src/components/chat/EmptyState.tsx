@@ -51,8 +51,8 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         className="mb-4 sm:mb-8"
       >
         <div className="relative">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center animate-float">
-            <Sparkles className="size-7 sm:size-10 text-white" />
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl overflow-hidden animate-float">
+            <img src="/wisely-logo.jpeg" alt="Wisely" className="w-full h-full object-cover" />
           </div>
           <div className="absolute inset-0 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 blur-2xl opacity-30 animate-wisely-pulse" />
         </div>
