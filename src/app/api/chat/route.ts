@@ -44,7 +44,7 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// OpenRouter fallback models (updated June 2025 — best free models)
+// OpenRouter models (updated June 2025 — best free models)
 const TEXT_MODELS = [
   "nvidia/nemotron-3-ultra-550b-a55b:free",   // 1M ctx, most capable free model
   "qwen/qwen3-coder:free",                     // 1M ctx, great for code & reasoning
@@ -83,14 +83,12 @@ function friendlyError(status: number, errorMsg: string): string {
 function streamAsSSE(fullText: string): Response {
   const encoder = new TextEncoder()
 
-  // Split text into small chunks for streaming effect
-  const words = fullText.split(/(\s+)/) // Keep whitespace as separate tokens
+  const words = fullText.split(/(\s+)/)
   const chunks: string[] = []
   let current = ""
 
   for (const word of words) {
     current += word
-    // Send a chunk every ~3 words or when we hit punctuation
     if (current.length >= 8 || /[.!?,;:]$/.test(current)) {
       chunks.push(current)
       current = ""
@@ -172,7 +170,7 @@ async function tryOpenRouterStreaming(
       // Rate limit — try next model, different free models may have separate limits
       if (response.status === 429) {
         console.warn(`[Wisely] Model ${model} rate limited, trying next model...`)
-        continue // Don't give up — try the next model in the chain
+        continue
       }
     } catch (fetchErr: any) {
       console.error(`[Wisely] OpenRouter model ${model} fetch error:`, fetchErr?.message)
@@ -243,10 +241,110 @@ function streamOpenRouterResponse(response: Response): Response {
   })
 }
 
+// Helper: Convert formatted messages to Gemini format
+function toGeminiHistory(formattedMessages: Array<any>): any[] {
+  const geminiHistory: any[] = []
+
+  for (const msg of formattedMessages) {
+    if (msg.role === "system") continue
+
+    if (msg.role === "user") {
+      if (Array.isArray(msg.content)) {
+        const parts: any[] = []
+        for (const part of msg.content) {
+          if (part.type === "text") {
+            parts.push({ text: part.text })
+          } else if (part.type === "image_url" && part.image_url?.url) {
+            const imgUrl = part.image_url.url
+            if (imgUrl.startsWith("data:")) {
+              const matches = imgUrl.match(/^data:([^;]+);base64,(.+)$/)
+              if (matches) {
+                parts.push({
+                  inlineData: {
+                    mimeType: matches[1],
+                    data: matches[2],
+                  },
+                })
+              }
+            }
+          }
+        }
+        geminiHistory.push({ role: "user", parts })
+      } else {
+        geminiHistory.push({ role: "user", parts: [{ text: msg.content }] })
+      }
+    } else if (msg.role === "assistant") {
+      const text = typeof msg.content === "string" ? msg.content : ""
+      geminiHistory.push({ role: "model", parts: [{ text }] })
+    }
+  }
+
+  return geminiHistory
+}
+
+// Helper: Call Gemini and return response
+async function tryGemini(
+  geminiKey: string,
+  formattedMessages: Array<any>,
+  systemPrompt: string,
+  isVision: boolean
+): Promise<Response | null> {
+  try {
+    const genAI = new GoogleGenerativeAI(geminiKey)
+
+    // For vision: Gemini 2.0 Flash (best free vision)
+    // For text with code: Gemini 2.5 Flash (best free coding)
+    // For general text: Gemini 2.0 Flash (fast & smart)
+    let modelName = "gemini-2.0-flash"
+    if (!isVision) {
+      const lastUserMsg = formattedMessages
+        .filter((m: any) => m.role === 'user')
+        .map((m: any) => typeof m.content === 'string' ? m.content : '')
+        .pop() || ''
+      const isCodingTask = /\b(code|coding|program|function|script|debug|fix.*code|write.*code|implement|algorithm|api|python|javascript|typescript|react|node|html|css|sql|database|git|deploy|build|compile|syntax|error|bug|stack|class|method|loop|array|object|json|yaml|docker|server|backend|frontend|fullstack|component|hook|library|package|npm|pip|import|export|async|await|fetch|promise)\b/i.test(lastUserMsg)
+      if (isCodingTask) modelName = "gemini-2.5-flash-preview-05-20"
+    }
+
+    console.log(`[Wisely] Gemini model: ${modelName} (vision: ${isVision})`)
+    const model = genAI.getGenerativeModel({ model: modelName })
+    const geminiHistory = toGeminiHistory(formattedMessages)
+
+    let responseText = ""
+
+    if (geminiHistory.length > 1) {
+      const chat = model.startChat({
+        history: geminiHistory.slice(0, -1),
+        systemInstruction: systemPrompt,
+      })
+      const lastMessage = geminiHistory[geminiHistory.length - 1]
+      const result = await chat.sendMessage(lastMessage.parts)
+      responseText = result.response.text()
+    } else if (geminiHistory.length === 1) {
+      const result = await model.generateContent({
+        contents: geminiHistory,
+        systemInstruction: systemPrompt,
+      })
+      responseText = result.response.text()
+    }
+
+    if (responseText) {
+      console.log("[Wisely] Gemini responded successfully")
+      return streamAsSSE(responseText)
+    }
+
+    console.error("[Wisely] Gemini returned empty content")
+    return null
+  } catch (geminiErr: any) {
+    console.error("[Wisely] Gemini error:", geminiErr?.message || geminiErr)
+    return null
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages, files, imageBase64, customInstructions } = await request.json()
     const openRouterKey = process.env.OPENROUTER_API_KEY
+    const geminiKey = process.env.GEMINI_API_KEY
 
     const hasImage = imageBase64 && imageBase64.length > 100
 
@@ -292,7 +390,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === PROVIDER 1: Try z-ai-web-dev-sdk (non-streaming for stability) ===
+    // ============================================================
+    // PROVIDER CHAIN — Smart routing based on task type:
+    //   TEXT-ONLY:  z-ai → OpenRouter (Nemotron Ultra) → Gemini
+    //   VISION:     z-ai → Gemini → OpenRouter
+    // ============================================================
+
+    // === PROVIDER 1: z-ai-web-dev-sdk (dev container only, unlimited) ===
     try {
       const ZAI = (await import("z-ai-web-dev-sdk")).default
       const zai = await ZAI.create()
@@ -323,113 +427,48 @@ export async function POST(request: NextRequest) {
       console.error("[Wisely] z-ai error:", zaiErr?.message || zaiErr)
     }
 
-    // === PROVIDER 2: Try Google Gemini (free 1500 requests/day) ===
-    const geminiKey = process.env.GEMINI_API_KEY
-    if (geminiKey) {
-      try {
-        console.log("[Wisely] Trying Google Gemini (provider 2)")
-        const genAI = new GoogleGenerativeAI(geminiKey)
+    if (hasImage) {
+      // ========================
+      // VISION PATH: Gemini → OpenRouter
+      // ========================
 
-        // Smart model selection: detect coding tasks for better model routing
-        const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop()?.content || ''
-        const isCodingTask = /\b(code|coding|program|function|script|debug|fix.*code|write.*code|implement|algorithm|api|python|javascript|typescript|react|node|html|css|sql|database|git|deploy|build|compile|syntax|error|bug|stack|class|method|loop|array|object|json|yaml|docker|server|backend|frontend|fullstack|component|hook|library|package|npm|pip|import|export|async|await|fetch|promise)/i.test(lastUserMsg)
-
-        // Gemini 2.5 Flash for coding (best free code model), 2.0 Flash for general/vision
-        const modelName = isCodingTask ? "gemini-2.5-flash-preview-05-20" : "gemini-2.0-flash"
-        console.log(`[Wisely] Gemini model: ${modelName} (coding: ${isCodingTask})`)
-        const model = genAI.getGenerativeModel({ model: modelName })
-
-        // Convert messages to Gemini format
-        const geminiHistory: any[] = []
-        let lastUserText = ""
-
-        for (const msg of formattedMessages) {
-          if (msg.role === "system") {
-            // Gemini uses systemInstruction instead of system messages
-            continue
-          }
-
-          if (msg.role === "user") {
-            // Handle multimodal content (text + image)
-            if (Array.isArray(msg.content)) {
-              const parts: any[] = []
-              for (const part of msg.content) {
-                if (part.type === "text") {
-                  parts.push({ text: part.text })
-                  lastUserText = part.text
-                } else if (part.type === "image_url" && part.image_url?.url) {
-                  const imgUrl = part.image_url.url
-                  if (imgUrl.startsWith("data:")) {
-                    const matches = imgUrl.match(/^data:([^;]+);base64,(.+)$/)
-                    if (matches) {
-                      parts.push({
-                        inlineData: {
-                          mimeType: matches[1],
-                          data: matches[2],
-                        },
-                      })
-                    }
-                  }
-                }
-              }
-              geminiHistory.push({ role: "user", parts })
-            } else {
-              lastUserText = msg.content
-              geminiHistory.push({ role: "user", parts: [{ text: msg.content }] })
-            }
-          } else if (msg.role === "assistant") {
-            const text = typeof msg.content === "string" ? msg.content : ""
-            geminiHistory.push({ role: "model", parts: [{ text }] })
-          }
-        }
-
-        // Use chat with history for multi-turn, or generateContent for single turn
-        if (geminiHistory.length > 1) {
-          // Multi-turn conversation
-          const chat = model.startChat({
-            history: geminiHistory.slice(0, -1),
-            systemInstruction: systemPrompt,
-          })
-          const lastMessage = geminiHistory[geminiHistory.length - 1]
-          const result = await chat.sendMessage(lastMessage.parts)
-          const responseText = result.response.text()
-
-          if (responseText) {
-            console.log("[Wisely] Gemini responded successfully, streaming to client")
-            return streamAsSSE(responseText)
-          }
-        } else if (geminiHistory.length === 1) {
-          // Single message
-          const result = await model.generateContent({
-            contents: geminiHistory,
-            systemInstruction: systemPrompt,
-          })
-          const responseText = result.response.text()
-
-          if (responseText) {
-            console.log("[Wisely] Gemini responded successfully, streaming to client")
-            return streamAsSSE(responseText)
-          }
-        }
-
-        console.error("[Wisely] Gemini returned empty content")
-      } catch (geminiErr: any) {
-        console.error("[Wisely] Gemini error:", geminiErr?.message || geminiErr)
+      // PROVIDER 2a: Gemini for vision (best free image analysis, 1500/day)
+      if (geminiKey) {
+        console.log("[Wisely] VISION PATH → Gemini (provider 2a)")
+        const result = await tryGemini(geminiKey, formattedMessages, systemPrompt, true)
+        if (result) return result
       }
+
+      // PROVIDER 2b: OpenRouter vision models as fallback
+      if (openRouterKey) {
+        console.log("[Wisely] VISION PATH → OpenRouter (provider 2b)")
+        const result = await tryOpenRouterStreaming(formattedMessages, true, openRouterKey)
+        if (result) {
+          if (result instanceof NextResponse) return result
+          return streamOpenRouterResponse(result)
+        }
+      }
+
     } else {
-      console.log("[Wisely] No GEMINI_API_KEY set, skipping Gemini provider")
-    }
+      // ========================
+      // TEXT PATH: OpenRouter → Gemini
+      // ========================
 
-    // === PROVIDER 3: Try OpenRouter as final fallback ===
-    if (openRouterKey) {
-      console.log("[Wisely] Trying OpenRouter (provider 3)")
-      const result = await tryOpenRouterStreaming(formattedMessages, hasImage, openRouterKey)
+      // PROVIDER 2a: OpenRouter for text (Nemotron Ultra 550B = best free text model)
+      if (openRouterKey) {
+        console.log("[Wisely] TEXT PATH → OpenRouter (provider 2a)")
+        const result = await tryOpenRouterStreaming(formattedMessages, false, openRouterKey)
+        if (result) {
+          if (result instanceof NextResponse) return result
+          return streamOpenRouterResponse(result)
+        }
+      }
 
-      if (result) {
-        // If result is a NextResponse (error), return it directly
-        if (result instanceof NextResponse) return result
-        // If it's a streaming Response from OpenRouter, forward it
-        return streamOpenRouterResponse(result)
+      // PROVIDER 2b: Gemini as text fallback
+      if (geminiKey) {
+        console.log("[Wisely] TEXT PATH → Gemini (provider 2b)")
+        const result = await tryGemini(geminiKey, formattedMessages, systemPrompt, false)
+        if (result) return result
       }
     }
 
