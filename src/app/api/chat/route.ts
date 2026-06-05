@@ -44,14 +44,14 @@ IMAGE ANALYSIS:
 - Be specific and helpful with your analysis
 - Always present structured data in proper markdown tables`
 
-// OpenRouter models (updated June 2025 — best free models)
+// OpenRouter models (updated June 2025 — sorted by speed/reliability)
 const TEXT_MODELS = [
-  "nvidia/nemotron-3-ultra-550b-a55b:free",   // 1M ctx, most capable free model
-  "qwen/qwen3-coder:free",                     // 1M ctx, great for code & reasoning
-  "nvidia/nemotron-3-super-120b-a12b:free",   // 1M ctx, strong general purpose
-  "moonshotai/kimi-k2.6:free",                 // 262K ctx, excellent reasoning
+  "moonshotai/kimi-k2.6:free",                 // 262K ctx, fast & smart
   "google/gemma-4-31b-it:free",                // 262K ctx, Google's latest
-  "meta-llama/llama-3.3-70b-instruct:free",   // 131K ctx, reliable fallback
+  "meta-llama/llama-3.3-70b-instruct:free",   // 131K ctx, reliable & fast
+  "qwen/qwen3-coder:free",                     // 1M ctx, great for code
+  "nvidia/nemotron-3-ultra-550b-a55b:free",   // 1M ctx, very smart but slow
+  "nvidia/nemotron-3-super-120b-a12b:free",   // 1M ctx, strong but slow
 ]
 
 const VISION_MODELS = [
@@ -391,9 +391,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================================
-    // PROVIDER CHAIN — Smart routing based on task type:
-    //   TEXT-ONLY:  z-ai → OpenRouter (Nemotron Ultra) → Gemini
-    //   VISION:     z-ai → Gemini → OpenRouter
+    // PROVIDER CHAIN — Gemini first (fast), OpenRouter as backup:
+    //   ALL: z-ai (dev only) → Gemini → OpenRouter
+    //   Gemini 2.5 Flash for code, 2.0 Flash for general/vision
     // ============================================================
 
     // === PROVIDER 1: z-ai-web-dev-sdk (dev container only, unlimited) ===
@@ -427,48 +427,20 @@ export async function POST(request: NextRequest) {
       console.error("[Wisely] z-ai error:", zaiErr?.message || zaiErr)
     }
 
-    if (hasImage) {
-      // ========================
-      // VISION PATH: Gemini → OpenRouter
-      // ========================
+    // === PROVIDER 2: Google Gemini (fast + 1500 free req/day) ===
+    if (geminiKey) {
+      console.log("[Wisely] Trying Gemini (provider 2)")
+      const result = await tryGemini(geminiKey, formattedMessages, systemPrompt, hasImage)
+      if (result) return result
+    }
 
-      // PROVIDER 2a: Gemini for vision (best free image analysis, 1500/day)
-      if (geminiKey) {
-        console.log("[Wisely] VISION PATH → Gemini (provider 2a)")
-        const result = await tryGemini(geminiKey, formattedMessages, systemPrompt, true)
-        if (result) return result
-      }
-
-      // PROVIDER 2b: OpenRouter vision models as fallback
-      if (openRouterKey) {
-        console.log("[Wisely] VISION PATH → OpenRouter (provider 2b)")
-        const result = await tryOpenRouterStreaming(formattedMessages, true, openRouterKey)
-        if (result) {
-          if (result instanceof NextResponse) return result
-          return streamOpenRouterResponse(result)
-        }
-      }
-
-    } else {
-      // ========================
-      // TEXT PATH: OpenRouter → Gemini
-      // ========================
-
-      // PROVIDER 2a: OpenRouter for text (Nemotron Ultra 550B = best free text model)
-      if (openRouterKey) {
-        console.log("[Wisely] TEXT PATH → OpenRouter (provider 2a)")
-        const result = await tryOpenRouterStreaming(formattedMessages, false, openRouterKey)
-        if (result) {
-          if (result instanceof NextResponse) return result
-          return streamOpenRouterResponse(result)
-        }
-      }
-
-      // PROVIDER 2b: Gemini as text fallback
-      if (geminiKey) {
-        console.log("[Wisely] TEXT PATH → Gemini (provider 2b)")
-        const result = await tryGemini(geminiKey, formattedMessages, systemPrompt, false)
-        if (result) return result
+    // === PROVIDER 3: OpenRouter as fallback ===
+    if (openRouterKey) {
+      console.log("[Wisely] Trying OpenRouter (provider 3)")
+      const result = await tryOpenRouterStreaming(formattedMessages, hasImage, openRouterKey)
+      if (result) {
+        if (result instanceof NextResponse) return result
+        return streamOpenRouterResponse(result)
       }
     }
 
