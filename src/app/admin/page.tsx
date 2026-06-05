@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAppStore } from '@/lib/store'
-import Image from 'next/image'
 
 const ADMIN_KEY = 'wisely-haris-admin-2024'
 
@@ -174,17 +173,7 @@ export default function AdminPage() {
           className="w-full max-w-sm"
         >
           <div className="glass-strong rounded-2xl p-6 sm:p-8">
-            {/* Logo */}
             <div className="flex flex-col items-center mb-6">
-              <div className="relative w-16 h-16 mb-3">
-                <Image
-                  src="/wisely-logo.jpeg"
-                  alt="Wisely Logo"
-                  fill
-                  className="rounded-2xl object-cover"
-                  priority
-                />
-              </div>
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 via-orange-500/20 to-amber-500/20 flex items-center justify-center mb-2">
                 <Shield className="size-7 text-amber-500" />
               </div>
@@ -246,13 +235,8 @@ export default function AdminPage() {
       <header className="sticky top-0 z-30 glass-strong border-b border-[var(--divider-color)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9 rounded-xl overflow-hidden">
-              <Image
-                src="/wisely-logo.jpeg"
-                alt="Wisely"
-                fill
-                className="object-cover"
-              />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500/20 via-orange-500/20 to-amber-500/20 flex items-center justify-center">
+              <Shield className="size-5 text-amber-500" />
             </div>
             <div>
               <h1 className="text-base font-bold text-foreground">Admin Dashboard</h1>
