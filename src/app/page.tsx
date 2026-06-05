@@ -61,30 +61,18 @@ export default function Home() {
     }
   }, [isDarkMode])
 
-  // Prevent body scroll when in chat view and handle mobile viewport
+  // Prevent body scroll when in chat view (but DO NOT set touchAction: none — it breaks mobile scrolling)
   useEffect(() => {
     if (currentView === 'chat') {
       document.body.style.overflow = 'hidden'
       document.body.style.overscrollBehavior = 'none'
-      document.body.style.touchAction = 'none'
-      // Set viewport to prevent zoom on input focus (iOS)
-      const viewport = document.querySelector('meta[name="viewport"]')
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
-      }
     } else {
       document.body.style.overflow = ''
       document.body.style.overscrollBehavior = ''
-      document.body.style.touchAction = ''
-      const viewport = document.querySelector('meta[name="viewport"]')
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1')
-      }
     }
     return () => {
       document.body.style.overflow = ''
       document.body.style.overscrollBehavior = ''
-      document.body.style.touchAction = ''
     }
   }, [currentView])
 
@@ -234,23 +222,34 @@ export default function Home() {
             exit="exit"
             className="h-[100dvh] flex relative overflow-hidden"
           >
-            {/* Mobile sidebar overlay */}
+            {/* Mobile sidebar overlay backdrop */}
             {isMobile && sidebarOpen && (
               <div
                 className="fixed inset-0 z-40 bg-[var(--overlay-bg)] backdrop-blur-sm"
                 onClick={handleToggleSidebar}
               />
             )}
-            {/* Sidebar - mobile: fixed overlay, desktop: inline */}
-            <div className={isMobile && sidebarOpen ? 'fixed inset-y-0 left-0 z-50 h-[100dvh]' : 'h-full'}>
+
+            {/* Sidebar — mobile: fixed overlay, desktop: inline flex child */}
+            {isMobile ? (
+              sidebarOpen && (
+                <div className="fixed inset-y-0 left-0 z-50 h-[100dvh]">
+                  <ChatSidebar
+                    onNewChat={handleNewChat}
+                    onToggle={handleToggleSidebar}
+                    isOpen={true}
+                  />
+                </div>
+              )
+            ) : (
               <ChatSidebar
                 onNewChat={handleNewChat}
                 onToggle={handleToggleSidebar}
                 isOpen={sidebarOpen}
               />
-            </div>
+            )}
 
-            {/* Chat Area */}
+            {/* Chat Area — always takes full width on mobile */}
             <ChatArea />
           </motion.div>
         )}

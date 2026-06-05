@@ -226,7 +226,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-4xl mx-auto px-2 pb-2 pt-1 sm:px-4 sm:pb-4 sm:pt-2 relative shrink-0"
+      className="w-full max-w-4xl mx-auto px-2 pb-[env(safe-area-inset-bottom,4px)] pt-1 sm:px-4 sm:pb-4 sm:pt-2 relative shrink-0"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

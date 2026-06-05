@@ -267,8 +267,8 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
         )}
       </AnimatePresence>
 
-      {/* Toggle button when sidebar is closed */}
-      {!isOpen && (
+      {/* Toggle button when sidebar is closed — desktop only */}
+      {!isOpen && !isMobile && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

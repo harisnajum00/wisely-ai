@@ -6,6 +6,9 @@ import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import EmptyState from './EmptyState'
 import RateLimitPopup from './RateLimitPopup'
+import { PanelLeft, Sun, Moon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function ChatArea() {
   const {
@@ -16,7 +19,13 @@ export default function ChatArea() {
     createNewChat,
     updateChat,
     customInstructions,
+    sidebarOpen,
+    setSidebarOpen,
+    isDarkMode,
+    setIsDarkMode,
   } = useAppStore()
+
+  const isMobile = useIsMobile()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -389,10 +398,19 @@ export default function ChatArea() {
     [currentChatId, updateMessage, bufferedUpdate]
   )
 
+  const handleThemeToggle = () => {
+    const newDark = !isDarkMode
+    setIsDarkMode(newDark)
+    const html = document.documentElement
+    if (newDark) {
+      html.classList.add('dark')
+    } else {
+      html.classList.remove('dark')
+    }
+  }
+
   return (
-    <div className="flex-1 flex flex-col h-full min-w-0 relative bg-chat-bg overflow-hidden"
-      style={{ touchAction: 'pan-y' }}
-    >
+    <div className="flex-1 flex flex-col h-full min-w-0 relative bg-chat-bg overflow-hidden">
       {/* Rate limit popup */}
       <RateLimitPopup
         isOpen={showRateLimit}
@@ -400,7 +418,31 @@ export default function ChatArea() {
         resetTime={rateLimitResetTime}
       />
 
-      {/* Messages area - this div must be the only scrollable element */}
+      {/* Mobile top bar — only shows on mobile when sidebar is closed */}
+      {isMobile && !sidebarOpen && (
+        <div className="flex items-center justify-between px-2 py-1.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            className="text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] h-9 w-9"
+          >
+            <PanelLeft className="size-5" />
+          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleThemeToggle}
+              className="text-[var(--icon-muted)] hover:text-[var(--icon-muted-hover)] hover:bg-[var(--btn-ghost-hover-bg)] h-9 w-9"
+            >
+              {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Messages area — this is the ONLY scrollable element */}
       <div
         ref={scrollContainerRef}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
@@ -426,7 +468,7 @@ export default function ChatArea() {
         )}
       </div>
 
-      {/* Input area - fixed at bottom */}
+      {/* Input area — fixed at bottom with safe area support */}
       <ChatInput onSend={handleSend} />
     </div>
   )

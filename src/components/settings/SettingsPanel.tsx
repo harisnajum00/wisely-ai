@@ -128,7 +128,7 @@ export default function SettingsPanel() {
   const tabIconSize = isMobile ? 'size-4' : 'size-4'
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}
