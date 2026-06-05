@@ -44,7 +44,7 @@ export default function Navbar({ onSignIn, onGetStarted, onFeatures, onAbout }: 
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="relative w-8 h-8 rounded-lg overflow-hidden">
-              <img src="/wisely-logo.jpeg" alt="Wisely" className="w-full h-full object-cover" />
+              <img src="/wisely-logo.png" alt="Wisely" className="w-full h-full object-cover" />
             </div>
             <span className="gradient-text text-lg font-semibold tracking-tight">
               Wisely by Haris

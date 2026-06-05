@@ -149,7 +149,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
             <div className="p-3 sm:p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 cursor-pointer select-none" onClick={handleLogoClick} title="Wisely">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center overflow-hidden">
-                  <img src="/wisely-logo.jpeg" alt="W" className="w-full h-full object-cover" />
+                  <img src="/wisely-logo.png" alt="W" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-semibold text-foreground text-base sm:text-lg">Wisely</span>
               </div>

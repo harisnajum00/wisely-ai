@@ -33,7 +33,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Haris" }],
   icons: {
-    icon: "/logo.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/wisely-logo.png", type: "image/png", sizes: "591x591" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "Wisely by Haris — Ask anything. Understand everything.",

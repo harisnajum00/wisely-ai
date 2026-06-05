@@ -52,7 +52,7 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
       >
         <div className="relative">
           <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl overflow-hidden animate-float">
-            <img src="/wisely-logo.jpeg" alt="Wisely" className="w-full h-full object-cover" />
+            <img src="/wisely-logo.png" alt="Wisely" className="w-full h-full object-cover" />
           </div>
           <div className="absolute inset-0 w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 blur-2xl opacity-30 animate-wisely-pulse" />
         </div>
