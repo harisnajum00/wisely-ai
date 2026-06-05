@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn, Sun, Moon, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn, Sun, Moon, AlertTriangle, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -27,6 +27,19 @@ interface ChatSidebarProps {
 export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebarProps) {
   const { chats, currentChatId, setCurrentChatId, deleteChat, user, setCurrentView, setAuthMode, isAuthenticated, setSidebarOpen, isDarkMode, setIsDarkMode } = useAppStore()
   const isMobile = useIsMobile()
+
+  // Secret admin access: triple-click on logo
+  const [logoClicks, setLogoClicks] = useState(0)
+  const handleLogoClick = () => {
+    const newCount = logoClicks + 1
+    setLogoClicks(newCount)
+    if (newCount >= 3) {
+      setLogoClicks(0)
+      if (isMobile) setSidebarOpen(false)
+      window.location.href = '/admin'
+    }
+    setTimeout(() => setLogoClicks(0), 800)
+  }
 
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
@@ -134,7 +147,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
           >
             {/* Header */}
             <div className="p-3 sm:p-4 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 cursor-pointer select-none" onClick={handleLogoClick} title="Wisely">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center">
                   <Sparkles className="size-3.5 sm:size-4 text-white" />
                 </div>
@@ -225,6 +238,14 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                 >
                   {isDarkMode ? <Sun className="size-4" /> : <Moon className="size-4" />}
                   {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                {/* Hidden admin button — only visible on long press / hover */}
+                <button
+                  onClick={() => { if (isMobile) setSidebarOpen(false); window.location.href = '/admin' }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[var(--sidebar-text)] hover:text-[var(--sidebar-text-hover)] hover:bg-[var(--hover-bg)] active:bg-[var(--hover-bg)] transition-all text-sm opacity-30 hover:opacity-100"
+                >
+                  <Shield className="size-4" />
+                  Admin
                 </button>
               </div>
               <Separator className="bg-[var(--divider-color)]" />
