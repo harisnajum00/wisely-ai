@@ -185,8 +185,15 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    height: 100%;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Prevent rubber-band scrolling on iOS */
+  body {
+    overscroll-behavior-y: none;
   }
 }
 

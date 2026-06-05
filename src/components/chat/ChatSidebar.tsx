@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, Settings, FileText, PanelLeftClose, PanelLeft, Sparkles, LogIn, Sun, Moon, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -99,10 +98,15 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
       }}
     >
       <span className="truncate text-sm flex-1">{chat.title}</span>
+      {/* Delete button - always visible on mobile, hover-visible on desktop */}
       <button
         onClick={(e) => handleDeleteClick(e, chat.id, chat.title)}
         className={`p-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 text-muted-foreground/40 transition-all shrink-0 ${
-          currentChatId === chat.id ? 'opacity-60 hover:opacity-100' : isMobile ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'
+          currentChatId === chat.id
+            ? 'opacity-70 hover:opacity-100'
+            : isMobile
+              ? 'opacity-70 hover:opacity-100 active:opacity-100'
+              : 'opacity-0 group-hover:opacity-100'
         }`}
         title="Delete chat"
       >
@@ -117,13 +121,14 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
         {isOpen && (
           <motion.aside
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
+            animate={{ width: isMobile ? 280 : 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="h-full flex flex-col glass border-r border-[var(--divider-color)] overflow-hidden shrink-0"
+            style={{ minWidth: 0 }}
           >
             {/* Header */}
-            <div className="p-4 flex items-center justify-between">
+            <div className="p-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center">
                   <Sparkles className="size-4 text-white" />
@@ -141,7 +146,7 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
             </div>
 
             {/* New Chat Button */}
-            <div className="px-3 mb-2">
+            <div className="px-3 mb-2 shrink-0">
               <Button
                 onClick={onNewChat}
                 className="w-full h-10 btn-primary rounded-xl text-white font-medium text-sm border-0 justify-start gap-2"
@@ -151,8 +156,10 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
               </Button>
             </div>
 
-            {/* Chat List */}
-            <ScrollArea className="flex-1 px-2">
+            {/* Chat List - Scrollable area with proper constraints */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2"
+              style={{ scrollbarGutter: 'stable' }}
+            >
               {chats.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/30">
                   <Sparkles className="size-8 mb-2" />
@@ -177,7 +184,6 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                   {Object.entries(groupedChats)
                     .filter(([group]) => !groupOrder.includes(group))
                     .sort(([a], [b]) => {
-                      // Sort by date descending for non-standard groups
                       return b.localeCompare(a)
                     })
                     .map(([group, groupChats]) => (
@@ -190,10 +196,10 @@ export default function ChatSidebar({ onNewChat, onToggle, isOpen }: ChatSidebar
                     ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
 
             {/* Bottom Section */}
-            <div className="mt-auto">
+            <div className="shrink-0 mt-auto">
               <Separator className="bg-[var(--divider-color)]" />
               <div className="p-3 space-y-1">
                 <button

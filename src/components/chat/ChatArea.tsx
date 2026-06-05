@@ -390,7 +390,7 @@ export default function ChatArea() {
   )
 
   return (
-    <div className="flex-1 flex flex-col h-full relative bg-chat-bg">
+    <div className="flex-1 flex flex-col h-full min-w-0 relative bg-chat-bg overflow-hidden">
       {/* Rate limit popup */}
       <RateLimitPopup
         isOpen={showRateLimit}
@@ -398,15 +398,15 @@ export default function ChatArea() {
         resetTime={rateLimitResetTime}
       />
 
-      {/* Messages area */}
+      {/* Messages area - this div must be the only scrollable element */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
       >
         {!currentChat || currentChat.messages.length === 0 ? (
           <EmptyState onSuggestionClick={(suggestion) => handleSend(suggestion)} />
         ) : (
-          <div className="py-6 space-y-2">
+          <div className="py-4 sm:py-6 space-y-1 sm:space-y-2">
             {currentChat.messages.map((msg) => (
               <MessageBubble
                 key={msg.id}
@@ -423,7 +423,7 @@ export default function ChatArea() {
         )}
       </div>
 
-      {/* Input area */}
+      {/* Input area - fixed at bottom */}
       <ChatInput onSend={handleSend} />
     </div>
   )

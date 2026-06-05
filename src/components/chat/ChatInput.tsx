@@ -285,10 +285,10 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
                 alt={img.name}
                 className="w-20 h-20 object-cover rounded-xl"
               />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 rounded-xl flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 active:bg-black/40 transition-all duration-200 rounded-xl flex items-center justify-center">
                 <button
                   onClick={() => removeImage(index)}
-                  className="p-1.5 bg-black/60 rounded-full text-white/80 hover:text-white transition-colors opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100"
+                  className="p-1.5 bg-black/60 rounded-full text-white/80 hover:text-white active:text-white transition-colors opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 scale-75 group-hover:scale-100 active:scale-100"
                   style={{ transition: 'opacity 0.2s, transform 0.2s' }}
                 >
                   <X className="size-3.5" />

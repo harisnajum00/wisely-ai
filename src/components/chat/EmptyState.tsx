@@ -42,19 +42,19 @@ const suggestions = [
 
 export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12">
+    <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-12 min-h-0">
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, type: 'spring' }}
-        className="mb-6 sm:mb-8"
+        className="mb-4 sm:mb-8"
       >
         <div className="relative">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center animate-float">
-            <Sparkles className="size-8 sm:size-10 text-white" />
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 flex items-center justify-center animate-float">
+            <Sparkles className="size-7 sm:size-10 text-white" />
           </div>
-          <div className="absolute inset-0 w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 blur-2xl opacity-30 animate-wisely-pulse" />
+          <div className="absolute inset-0 w-14 h-14 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-indigo-500 to-cyan-400 blur-2xl opacity-30 animate-wisely-pulse" />
         </div>
       </motion.div>
 
@@ -63,7 +63,7 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="text-2xl sm:text-3xl font-bold text-foreground mb-2"
+        className="text-xl sm:text-3xl font-bold text-foreground mb-1 sm:mb-2"
       >
         How can I help today?
       </motion.h2>
@@ -72,7 +72,7 @@ export default function EmptyState({ onSuggestionClick }: EmptyStateProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="text-muted-foreground/50 text-sm mb-8 sm:mb-10"
+        className="text-muted-foreground/50 text-xs sm:text-sm mb-4 sm:mb-10"
       >
         Ask me anything or try a suggestion below
       </motion.p>

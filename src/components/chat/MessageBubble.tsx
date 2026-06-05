@@ -79,7 +79,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex gap-3 px-2 py-2 sm:px-4 sm:py-3 max-w-4xl mx-auto ${
+      className={`flex gap-2 sm:gap-3 px-2 py-1.5 sm:px-4 sm:py-3 max-w-4xl mx-auto ${
         isUser ? 'flex-row-reverse' : ''
       }`}
     >
@@ -97,7 +97,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
       {/* Message content */}
       <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
         <div
-          className={`inline-block max-w-[95%] sm:max-w-[90%] rounded-2xl px-4 py-3 ${
+          className={`inline-block max-w-[92%] sm:max-w-[90%] rounded-2xl px-3 py-2.5 sm:px-4 sm:py-3 ${
             isUser
               ? 'bg-chat-bubble-user text-chat-bubble-user-text rounded-tr-sm'
               : 'glass text-chat-bubble-ai-text rounded-tl-sm'
@@ -111,7 +111,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
                   <img
                     src={file.url}
                     alt={file.name}
-                    className="max-w-[280px] max-h-[200px] object-contain rounded-xl"
+                    className="max-w-[200px] sm:max-w-[280px] max-h-[150px] sm:max-h-[200px] object-contain rounded-xl"
                   />
                 </div>
               ))}
@@ -370,13 +370,13 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
 
         {/* Action buttons for AI messages */}
         {!isUser && (
-          <div className="flex items-center gap-1 mt-1.5 ml-1">
+          <div className="flex items-center gap-0.5 mt-1 ml-1">
             {onRegenerate && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onRegenerate}
-                className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
+                className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 active:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] active:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
                 title="Regenerate response"
               >
                 <RefreshCw className="size-3.5" />
@@ -386,7 +386,7 @@ export default function MessageBubble({ message, onRegenerate }: MessageBubblePr
               variant="ghost"
               size="icon"
               onClick={() => copyToClipboard(message.content, 'full-msg')}
-              className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
+              className="h-7 w-7 text-muted-foreground/30 hover:text-foreground/60 active:text-foreground/60 hover:bg-[var(--btn-ghost-hover-bg)] active:bg-[var(--btn-ghost-hover-bg)] rounded-lg"
               title="Copy message"
             >
               {copiedBlock === 'full-msg' ? (

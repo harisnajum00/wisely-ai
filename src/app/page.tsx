@@ -61,6 +61,21 @@ export default function Home() {
     }
   }, [isDarkMode])
 
+  // Prevent body scroll when in chat view
+  useEffect(() => {
+    if (currentView === 'chat') {
+      document.body.style.overflow = 'hidden'
+      document.body.style.overscrollBehavior = 'none'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
+    }
+  }, [currentView])
+
   // Check session on mount
   useEffect(() => {
     async function checkSession() {
@@ -106,7 +121,6 @@ export default function Home() {
   // Guest mode: go directly to chat without auth
   const handleStartChat = () => {
     if (!isAuthenticated) {
-      // Set a guest user so the chat experience works
       setUser({
         id: 'guest',
         email: '',
@@ -155,7 +169,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-background">
+    <div className="h-dvh overflow-hidden bg-background overscroll-none">
       <AnimatePresence mode="wait">
         {/* Landing + Auth View */}
         {(currentView === 'landing' || currentView === 'auth') && (
@@ -166,7 +180,7 @@ export default function Home() {
             animate="animate"
             exit="exit"
             ref={landingRef}
-            className="h-screen overflow-y-auto"
+            className="h-dvh overflow-y-auto overscroll-contain"
           >
             <Navbar
               onGetStarted={handleGetStarted}
@@ -206,14 +220,17 @@ export default function Home() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="h-screen flex relative"
+            className="h-dvh flex relative overflow-hidden"
           >
             {/* Mobile sidebar overlay */}
             {isMobile && sidebarOpen && (
-              <div className="fixed inset-0 z-40 bg-[var(--overlay-bg)] backdrop-blur-sm" onClick={handleToggleSidebar} />
+              <div
+                className="fixed inset-0 z-40 bg-[var(--overlay-bg)] backdrop-blur-sm"
+                onClick={handleToggleSidebar}
+              />
             )}
             {/* Sidebar - mobile: fixed overlay, desktop: inline */}
-            <div className={isMobile && sidebarOpen ? 'fixed inset-y-0 left-0 z-50' : ''}>
+            <div className={isMobile && sidebarOpen ? 'fixed inset-y-0 left-0 z-50 h-full' : 'h-full'}>
               <ChatSidebar
                 onNewChat={handleNewChat}
                 onToggle={handleToggleSidebar}
@@ -234,7 +251,7 @@ export default function Home() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className="h-screen"
+            className="h-dvh overflow-y-auto overscroll-contain"
           >
             <SettingsPanel />
           </motion.div>
